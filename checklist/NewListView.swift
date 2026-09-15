@@ -3,8 +3,7 @@ import SwiftData
 
 struct NewListView: View {
 
-    @Environment(\.dismiss)
-    private var dismiss
+    @Binding var navigationPath: NavigationPath
 
     @Environment(\.modelContext)
     private var modelContext
@@ -34,22 +33,26 @@ struct NewListView: View {
 
                 Button {
 
-                    dismiss()
+                    navigationPath.removeLast()
 
                 } label: {
 
                     HStack(spacing: 4) {
 
-                        Image(systemName: "chevron.left")
-                            .font(
-                                .system(
-                                    size: 13,
-                                    weight: .medium
-                                )
+                        Image(
+                            systemName: "chevron.left"
+                        )
+                        .font(
+                            .system(
+                                size: 13,
+                                weight: .medium
                             )
+                        )
 
                         Text("Cancel")
-                            .font(.system(size: 17))
+                            .font(
+                                .system(size: 17)
+                            )
                     }
                     .foregroundStyle(.secondary)
                 }
@@ -61,14 +64,14 @@ struct NewListView: View {
             .padding(.top, 12)
             .padding(.bottom, 10)
 
+            // MARK: - Content
+
             ScrollView {
 
                 VStack(
                     alignment: .leading,
                     spacing: 0
                 ) {
-
-                    // MARK: - Title
 
                     Text("New list")
                         .font(
@@ -86,7 +89,9 @@ struct NewListView: View {
                         "Grocery — Trader Joe's",
                         text: $listName
                     )
-                    .font(.system(size: 24))
+                    .font(
+                        .system(size: 24)
+                    )
                     .textFieldStyle(.plain)
                     .padding(.bottom, 9)
                     .overlay(
@@ -102,12 +107,12 @@ struct NewListView: View {
                         "Pick a category so the app can suggest items\n" +
                         "you've used before."
                     )
-                    .font(.system(size: 16))
+                    .font(
+                        .system(size: 16)
+                    )
                     .foregroundStyle(.secondary)
                     .padding(.top, 10)
                     .padding(.bottom, 14)
-
-                    // MARK: - Category Chips
 
                     categoryChips
                 }
@@ -164,8 +169,8 @@ struct NewListView: View {
                         in: .whitespacesAndNewlines
                     )
                     .isEmpty
-                    ? 0.5
-                    : 1
+                ? 0.5
+                : 1
             )
             .padding(.horizontal, 26)
             .padding(.top, 10)
@@ -184,9 +189,21 @@ private extension NewListView {
 
         LazyVGrid(
             columns: [
-                GridItem(.flexible(), spacing: 9),
-                GridItem(.flexible(), spacing: 9),
-                GridItem(.flexible(), spacing: 9)
+
+                GridItem(
+                    .flexible(),
+                    spacing: 9
+                ),
+
+                GridItem(
+                    .flexible(),
+                    spacing: 9
+                ),
+
+                GridItem(
+                    .flexible(),
+                    spacing: 9
+                )
             ],
             alignment: .leading,
             spacing: 9
@@ -204,11 +221,15 @@ private extension NewListView {
                 } label: {
 
                     Text(category)
-                        .font(.system(size: 16))
+                        .font(
+                            .system(
+                                size: 16
+                            )
+                        )
                         .foregroundStyle(
                             selectedCategory == category
-                                ? Color.white
-                                : Color.primary
+                            ? Color.white
+                            : Color.primary
                         )
                         .frame(
                             maxWidth: .infinity
@@ -216,12 +237,12 @@ private extension NewListView {
                         .frame(height: 40)
                         .background(
                             selectedCategory == category
-                                ? Color(
-                                    red: 0.15,
-                                    green: 0.15,
-                                    blue: 0.15
-                                )
-                                : Color.white
+                            ? Color(
+                                red: 0.15,
+                                green: 0.15,
+                                blue: 0.15
+                            )
+                            : Color.white
                         )
                         .clipShape(
                             Capsule()
@@ -229,7 +250,9 @@ private extension NewListView {
                         .overlay(
                             Capsule()
                                 .stroke(
-                                    Color(.systemGray4),
+                                    Color(
+                                        .systemGray4
+                                    ),
                                     lineWidth:
                                         selectedCategory == category
                                         ? 0
@@ -250,10 +273,9 @@ private extension NewListView {
     func createList() {
 
         let trimmedName =
-            listName
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                )
+            listName.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
 
         guard !trimmedName.isEmpty else {
             return
@@ -270,7 +292,14 @@ private extension NewListView {
 
             try modelContext.save()
 
-            dismiss()
+            // Replace New List with List Detail.
+            navigationPath.removeLast()
+
+            navigationPath.append(
+                AppRoute.listDetail(
+                    newList.id
+                )
+            )
 
         } catch {
 
@@ -287,7 +316,12 @@ private extension NewListView {
 
     NavigationStack {
 
-        NewListView()
+        NewListView(
+            navigationPath:
+                .constant(
+                    NavigationPath()
+                )
+        )
     }
     .modelContainer(
         for: [

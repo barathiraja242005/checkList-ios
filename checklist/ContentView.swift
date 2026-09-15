@@ -1,10 +1,19 @@
 import SwiftUI
 import SwiftData
 
+enum AppRoute: Hashable {
+    case newList
+    case listDetail(UUID)
+}
+
 struct ContentView: View {
 
     @Environment(\.modelContext)
     private var modelContext
+
+    // MARK: - Navigation
+
+    @State private var navigationPath = NavigationPath()
 
     // MARK: - Today Items
 
@@ -34,10 +43,8 @@ struct ContentView: View {
     @State private var isAddingItem = false
     @State private var newItemText = ""
     @State private var repeatEveryDay = false
-
     @State private var selectedTime: Date =
         Self.defaultTime
-
     @State private var hasSelectedTime = false
     @State private var showingTimePicker = false
 
@@ -60,7 +67,9 @@ struct ContentView: View {
 
     var body: some View {
 
-        NavigationStack {
+        NavigationStack(
+            path: $navigationPath
+        ) {
 
             ZStack(
                 alignment: .bottomTrailing
@@ -88,7 +97,42 @@ struct ContentView: View {
                 floatingAddButton
             }
             .background(Color.white)
+
+            // MARK: - Navigation Destinations
+
+            .navigationDestination(
+                for: AppRoute.self
+            ) { route in
+
+                switch route {
+
+                case .newList:
+
+                    NewListView(
+                        navigationPath: $navigationPath
+                    )
+
+                case .listDetail(let listID):
+
+                    if let list =
+                        lists.first(
+                            where: {
+                                $0.id == listID
+                            }
+                        ) {
+
+                        ListDetailView(
+                            list: list
+                        )
+
+                    } else {
+
+                        Text("List not found")
+                    }
+                }
+            }
         }
+
         .sheet(
             isPresented: $showingTimePicker
         ) {
@@ -104,6 +148,7 @@ struct ContentView: View {
                 onClear: {
 
                     hasSelectedTime = false
+
                     selectedTime =
                         Self.defaultTime
                 },
@@ -111,6 +156,7 @@ struct ContentView: View {
                 onDone: {
 
                     hasSelectedTime = true
+
                     addItem()
                 }
             )
@@ -138,7 +184,7 @@ private extension ContentView {
         return todayItems.filter { item in
 
             guard let skippedDate =
-                item.skippedDate
+                    item.skippedDate
             else {
                 return true
             }
@@ -150,7 +196,7 @@ private extension ContentView {
         }
     }
 
-    // MARK: Scheduled List Items
+    // MARK: - Scheduled List Items
 
     var scheduledTodayChecklistItems:
         [ChecklistListItem] {
@@ -162,7 +208,7 @@ private extension ContentView {
             .filter { item in
 
                 guard let scheduledDate =
-                    item.scheduledDate
+                        item.scheduledDate
                 else {
                     return false
                 }
@@ -172,8 +218,6 @@ private extension ContentView {
                 )
             }
             .sorted { first, second in
-
-                // Items with a time come first.
 
                 if first.hasScheduledTime !=
                     second.hasScheduledTime {
@@ -187,6 +231,7 @@ private extension ContentView {
 
                     let secondDate =
                         second.scheduledDate
+
                 else {
                     return false
                 }
@@ -195,7 +240,7 @@ private extension ContentView {
             }
     }
 
-    // MARK: Overdue List Items
+    // MARK: - Overdue List Items
 
     var overdueChecklistItems:
         [ChecklistListItem] {
@@ -226,6 +271,7 @@ private extension ContentView {
 
                     let secondDate =
                         second.scheduledDate
+
                 else {
                     return false
                 }
@@ -291,9 +337,9 @@ private extension ContentView {
                         Date(),
                         format:
                             .dateTime
-                                .weekday(.wide)
-                                .day()
-                                .month(.wide)
+                            .weekday(.wide)
+                            .day()
+                            .month(.wide)
                     )
 
                     Text("·")
@@ -336,8 +382,6 @@ private extension ContentView {
             Spacer()
                 .frame(height: 38)
 
-            // MARK: Existing Today Items
-
             ForEach(
                 visibleTodayItems
             ) { item in
@@ -356,8 +400,6 @@ private extension ContentView {
                 )
             }
 
-            // MARK: Scheduled Items From Other Lists
-
             ForEach(
                 scheduledTodayChecklistItems
             ) { item in
@@ -367,14 +409,10 @@ private extension ContentView {
                 )
             }
 
-            // MARK: Overdue
-
             if !overdueChecklistItems.isEmpty {
 
                 overdueSection
             }
-
-            // MARK: Add Item
 
             if isAddingItem {
 
@@ -488,9 +526,6 @@ private extension ContentView {
             }
             .buttonStyle(.plain)
 
-            // Show time only when
-            // the user actually selected a time.
-
             if item.hasScheduledTime,
                let scheduledDate =
                     item.scheduledDate {
@@ -499,8 +534,8 @@ private extension ContentView {
                     scheduledDate,
                     format:
                         .dateTime
-                            .hour()
-                            .minute()
+                        .hour()
+                        .minute()
                 )
                 .font(
                     .system(size: 16)
@@ -572,8 +607,6 @@ private extension ContentView {
                 spacing: 16
             ) {
 
-                // Unchecked box
-
                 RoundedRectangle(
                     cornerRadius: 5,
                     style: .continuous
@@ -586,8 +619,6 @@ private extension ContentView {
                     width: 22,
                     height: 22
                 )
-
-                // Item name
 
                 Text(item.text)
                     .font(
@@ -712,16 +743,11 @@ private extension ContentView {
         Button {
 
             isAddingItem = true
-
             newItemText = ""
-
             repeatEveryDay = false
-
             selectedTime =
                 Self.defaultTime
-
             hasSelectedTime = false
-
             isNewItemFieldFocused = true
 
         } label: {
@@ -791,7 +817,6 @@ private extension ContentView {
             HStack(spacing: 10) {
 
                 timeChip
-
                 repeatChip
 
                 Spacer()
@@ -934,8 +959,7 @@ private extension ContentView {
                     .whitespacesAndNewlines
             )
 
-        guard !trimmedText.isEmpty
-        else {
+        guard !trimmedText.isEmpty else {
 
             isAddingItem = false
 
@@ -978,6 +1002,7 @@ private extension ContentView {
 
             NotificationManager
                 .requestAuthorization {
+
                     granted in
 
                     newItem.reminderEnabled =
@@ -996,16 +1021,11 @@ private extension ContentView {
         }
 
         newItemText = ""
-
         repeatEveryDay = false
-
         selectedTime =
             Self.defaultTime
-
         hasSelectedTime = false
-
         isAddingItem = false
-
         showingTimePicker = false
     }
 }
@@ -1052,9 +1072,11 @@ private extension ContentView {
 
     var floatingAddButton: some View {
 
-        NavigationLink {
+        Button {
 
-            NewListView()
+            navigationPath.append(
+                AppRoute.newList
+            )
 
         } label: {
 
@@ -1067,9 +1089,7 @@ private extension ContentView {
                     weight: .medium
                 )
             )
-            .foregroundStyle(
-                .white
-            )
+            .foregroundStyle(.white)
             .frame(
                 width: 64,
                 height: 64
