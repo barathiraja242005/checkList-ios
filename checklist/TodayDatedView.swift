@@ -22,6 +22,9 @@ struct TodayDatedView: View {
     @Query
     private var occurrences: [Occurrence]
 
+    @Query
+    private var checklistItems: [ChecklistListItem]
+
     // MARK: - Environment
 
     @Environment(\.modelContext)
@@ -40,10 +43,8 @@ struct TodayDatedView: View {
     @State private var isAddingItem = false
     @State private var newItemText = ""
     @State private var repeatEveryDay = false
-
     @State private var selectedTime: Date =
         Self.defaultTime
-
     @State private var hasSelectedTime = false
     @State private var showingTimePicker = false
 
@@ -81,21 +82,13 @@ struct TodayDatedView: View {
     // MARK: - Body
 
     var body: some View {
-
         VStack(
             spacing: 0
         ) {
-
             topBar
-
             fullDateTitle
-
             dateStrip
-
-            // Divider()
-
             progressHeader
-
             itemsList
         }
         .background(Color.white)
@@ -106,7 +99,6 @@ struct TodayDatedView: View {
         .onChange(
             of: selectedDate
         ) { _, _ in
-
             isAddingItem = false
             newItemText = ""
             repeatEveryDay = false
@@ -118,24 +110,17 @@ struct TodayDatedView: View {
         .sheet(
             isPresented: $showingTimePicker
         ) {
-
             TimePickerView(
                 itemName:
                     newItemText.isEmpty
                     ? "New item"
                     : newItemText,
-
-                selectedTime:
-                    $selectedTime,
-
+                selectedTime: $selectedTime,
                 onClear: {
-
                     hasSelectedTime = false
                     selectedTime = Self.defaultTime
                 },
-
                 onDone: {
-
                     hasSelectedTime = true
                     addItem()
                 }
@@ -155,20 +140,13 @@ struct TodayDatedView: View {
 private extension TodayDatedView {
 
     var topBar: some View {
-
         HStack {
-
             Button {
-
                 dismiss()
-
             } label: {
-
                 HStack(spacing: 3) {
-
                     Image(
-                        systemName:
-                            "chevron.left"
+                        systemName: "chevron.left"
                     )
                     .font(
                         .system(
@@ -201,16 +179,14 @@ private extension TodayDatedView {
 private extension TodayDatedView {
 
     var fullDateTitle: some View {
-
-//        Text(
-//            selectedDate.formatted(
-//                .dateTime
-//                    .weekday(.wide)
-//                    .day()
-//                    .month(.wide)
-//            )
-//        )
-        Text("DEBUG SCREEN")
+        Text(
+            selectedDate.formatted(
+                .dateTime
+                    .weekday(.wide)
+                    .day()
+                    .month(.wide)
+            )
+        )
         .font(
             .system(
                 size: 28,
@@ -233,21 +209,16 @@ private extension TodayDatedView {
 private extension TodayDatedView {
 
     var dateStrip: some View {
-
         ScrollViewReader { proxy in
-
             ScrollView(
                 .horizontal,
                 showsIndicators: false
             ) {
-
                 HStack(spacing: 8) {
-
                     ForEach(
                         dateStripDates,
                         id: \.self
                     ) { date in
-
                         dateButton(
                             for: date
                         )
@@ -259,7 +230,6 @@ private extension TodayDatedView {
             }
             .frame(height: 75)
             .onAppear {
-
                 proxy.scrollTo(
                     selectedDate,
                     anchor: .center
@@ -268,13 +238,11 @@ private extension TodayDatedView {
             .onChange(
                 of: selectedDate
             ) { _, newDate in
-
                 withAnimation(
                     .easeInOut(
                         duration: 0.2
                     )
                 ) {
-
                     proxy.scrollTo(
                         newDate,
                         anchor: .center
@@ -285,9 +253,7 @@ private extension TodayDatedView {
     }
 
     var dateStripDates: [Date] {
-
-        let calendar =
-            Calendar.current
+        let calendar = Calendar.current
 
         return (-365...30).compactMap {
             offset in
@@ -304,8 +270,7 @@ private extension TodayDatedView {
         for date: Date
     ) -> some View {
 
-        let calendar =
-            Calendar.current
+        let calendar = Calendar.current
 
         let isSelected =
             calendar.isDate(
@@ -314,12 +279,10 @@ private extension TodayDatedView {
             )
 
         return Button {
-
             selectedDate =
                 calendar.startOfDay(
                     for: date
                 )
-
         } label: {
 
             VStack(spacing: 4) {
@@ -360,7 +323,6 @@ private extension TodayDatedView {
             .background {
 
                 if isSelected {
-
                     RoundedRectangle(
                         cornerRadius: 12,
                         style: .continuous
@@ -384,7 +346,6 @@ private extension TodayDatedView {
 private extension TodayDatedView {
 
     var progressHeader: some View {
-
         HStack(spacing: 8) {
 
             Text(
@@ -416,7 +377,6 @@ private extension TodayDatedView {
     }
 
     var visibleTodayItems: [TodayItem] {
-
         let calendar = Calendar.current
         let today = Self.today
 
@@ -435,27 +395,64 @@ private extension TodayDatedView {
         }
     }
 
+    var scheduledChecklistItems: [ChecklistListItem] {
+
+        let calendar = Calendar.current
+
+        return checklistItems
+            .filter { item in
+
+                guard let scheduledDate =
+                    item.scheduledDate
+                else {
+                    return false
+                }
+
+                return calendar.isDate(
+                    scheduledDate,
+                    inSameDayAs: selectedDate
+                )
+            }
+            .sorted { first, second in
+
+                let firstTime =
+                    first.scheduledDate ?? Date.distantFuture
+
+                let secondTime =
+                    second.scheduledDate ?? Date.distantFuture
+
+                return firstTime < secondTime
+            }
+    }
+
     var completedCount: Int {
 
-        if isToday {
-
-            return visibleTodayItems.filter {
+        let todayCompleted =
+            isToday
+            ? visibleTodayItems.filter {
                 $0.checked
             }.count
-        }
+            : selectedOccurrenceItems.filter {
+                $0.checked
+            }.count
 
-        return selectedOccurrenceItems.filter {
-            $0.checked
-        }.count
+        let scheduledCompleted =
+            scheduledChecklistItems.filter {
+                $0.checked
+            }.count
+
+        return todayCompleted + scheduledCompleted
     }
 
     var visibleItemCount: Int {
 
-        if isToday {
-            return visibleTodayItems.count
-        }
+        let existingCount =
+            isToday
+            ? visibleTodayItems.count
+            : selectedOccurrenceItems.count
 
-        return selectedOccurrenceItems.count
+        return existingCount +
+            scheduledChecklistItems.count
     }
 }
 
@@ -502,13 +499,10 @@ private extension TodayDatedView {
                     occurrence
             }
             .sorted {
-
                 $0.position <
                     $1.position
             }
     }
-
-    // MARK: Generate Future Occurrence
 
     func ensureOccurrenceForSelectedDate() {
 
@@ -578,10 +572,8 @@ private extension TodayDatedView {
                 OccurrenceItem(
                     sourceItemID:
                         todayItem.id,
-
                     text:
                         todayItem.text,
-
                     remindAt:
                         copyTime(
                             from:
@@ -589,14 +581,10 @@ private extension TodayDatedView {
                             to:
                                 selectedDate
                         ),
-
                     position:
                         nextPosition,
-
                     checked: false,
-
                     checkedAt: nil,
-
                     occurrence:
                         occurrence
                 )
@@ -607,26 +595,20 @@ private extension TodayDatedView {
         }
 
         do {
-
             try modelContext.save()
-
         } catch {
-
             print(
                 "Failed to generate future occurrence: \(error)"
             )
         }
     }
 
-    // MARK: Copy Time
-
     func copyTime(
         from sourceDate: Date?,
         to targetDate: Date
     ) -> Date? {
 
-        guard
-            let sourceDate
+        guard let sourceDate
         else {
             return nil
         }
@@ -669,19 +651,14 @@ private extension TodayDatedView {
 
                 if isToday {
 
-                    VStack(
-                        spacing: 0
-                    ) {
+                    ForEach(
+                        visibleTodayItems
+                    ) { item in
 
-                        ForEach(
-                            visibleTodayItems
-                        ) { item in
-
-                            TodayItemRow(
-                                item: item
-                            )
-                            .frame(height: 59)
-                        }
+                        TodayItemRow(
+                            item: item
+                        )
+                        .frame(height: 59)
                     }
 
                 } else {
@@ -698,27 +675,155 @@ private extension TodayDatedView {
                     }
                 }
 
-                // MARK: - Diagnostic Test
-                //
-                // Temporarily removing the Add Item
-                // composer from the layout.
-                //
-                // We are testing whether the two
-                // horizontal lines come from the
-                // composer area.
+                // MARK: Scheduled List Items
+
+                ForEach(
+                    scheduledChecklistItems
+                ) { item in
+
+                    scheduledChecklistItemRow(
+                        item
+                    )
+                }
+
+                // MARK: Add Item
 
                 if isToday {
 
-                    EmptyView()
+                    if isAddingItem {
+                        composer
+                    } else {
+                        addItemButton
+                    }
                 }
             }
             .padding(.horizontal, 32)
-
-            // Composer hint also disabled for this test.
+            .padding(.bottom, 40)
         }
         .scrollIndicators(.hidden)
-        .scrollDismissesKeyboard(
-            .never
+        .scrollDismissesKeyboard(.never)
+    }
+
+    func scheduledChecklistItemRow(
+        _ item: ChecklistListItem
+    ) -> some View {
+
+        HStack(spacing: 12) {
+
+            Button {
+                item.checked.toggle()
+
+                if let list = item.list {
+                    list.updateCounts()
+                }
+
+                saveChanges()
+            } label: {
+
+                RoundedRectangle(
+                    cornerRadius: 5,
+                    style: .continuous
+                )
+                .stroke(
+                    item.checked
+                    ? Color.clear
+                    : Color(.systemGray3),
+                    lineWidth: 1.5
+                )
+                .background {
+
+                    RoundedRectangle(
+                        cornerRadius: 5,
+                        style: .continuous
+                    )
+                    .fill(
+                        item.checked
+                        ? Color(
+                            red: 0.18,
+                            green: 0.48,
+                            blue: 0.36
+                        )
+                        : Color.clear
+                    )
+                }
+                .overlay {
+
+                    if item.checked {
+
+                        Image(
+                            systemName: "checkmark"
+                        )
+                        .font(
+                            .system(
+                                size: 11,
+                                weight: .bold
+                            )
+                        )
+                        .foregroundStyle(.white)
+                    }
+                }
+                .frame(
+                    width: 22,
+                    height: 22
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+
+                ChecklistListItemDetailView(
+                    item: item
+                )
+
+            } label: {
+
+                Text(item.text)
+                    .font(
+                        .system(size: 18)
+                    )
+                    .foregroundStyle(
+                        item.checked
+                        ? Color.secondary
+                        : Color.primary
+                    )
+                    .strikethrough(
+                        item.checked,
+                        color: .secondary
+                    )
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+            }
+            .buttonStyle(.plain)
+
+            if let scheduledDate =
+                item.scheduledDate {
+
+                Text(
+                    scheduledDate,
+                    format:
+                        .dateTime
+                            .hour()
+                            .minute()
+                )
+                .font(
+                    .system(size: 16)
+                )
+                .foregroundStyle(
+                    .secondary
+                )
+            }
+        }
+        .padding(.leading, 2)
+        .frame(minHeight: 59)
+        .overlay(
+            Rectangle()
+                .fill(
+                    Color(.systemGray5)
+                )
+                .frame(height: 1),
+            alignment: .bottom
         )
     }
 }
@@ -797,7 +902,6 @@ private extension TodayDatedView {
             HStack(spacing: 10) {
 
                 timeChip
-
                 repeatChip
 
                 Spacer()
@@ -805,20 +909,6 @@ private extension TodayDatedView {
             .padding(.leading, 40)
             .padding(.bottom, 14)
         }
-
-        /*
-        .overlay(
-            alignment: .top
-        ) {
-
-            Rectangle()
-                .fill(
-                    Color(.systemGray5)
-                )
-                .frame(height: 1)
-        }
-        */
-
         .overlay(
             alignment: .bottom
         ) {
@@ -942,41 +1032,6 @@ private extension TodayDatedView {
     }
 }
 
-// MARK: - Composer Hint
-
-private extension TodayDatedView {
-
-    var composerHint: some View {
-
-        Text(
-            "Both chips clear after each item, so the next one starts fresh."
-        )
-        .font(
-            .system(size: 14)
-        )
-        .foregroundStyle(
-            .secondary
-        )
-        .multilineTextAlignment(
-            .center
-        )
-        .frame(
-            maxWidth: .infinity
-        )
-        .padding(
-            .horizontal,
-            28
-        )
-        .padding(
-            .vertical,
-            13
-        )
-        .background(
-            Color(.systemGray6)
-        )
-    }
-}
-
 // MARK: - Add Item
 
 private extension TodayDatedView {
@@ -1059,26 +1114,11 @@ private extension TodayDatedView {
     }
 }
 
-// MARK: - Move Items
+// MARK: - Save
 
 private extension TodayDatedView {
 
-    func moveItems(
-        from source: IndexSet,
-        to destination: Int
-    ) {
-
-        var reordered = todayItems
-
-        reordered.move(
-            fromOffsets: source,
-            toOffset: destination
-        )
-
-        for (index, item) in reordered.enumerated() {
-
-            item.position = index
-        }
+    func saveChanges() {
 
         do {
 
@@ -1087,7 +1127,7 @@ private extension TodayDatedView {
         } catch {
 
             print(
-                "Failed to reorder items: \(error)"
+                "Failed to save change: \(error)"
             )
         }
     }

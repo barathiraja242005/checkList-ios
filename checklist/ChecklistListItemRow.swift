@@ -4,17 +4,22 @@ import SwiftData
 struct ChecklistListItemRow: View {
 
     @Bindable var item: ChecklistListItem
+
     let list: ChecklistList
 
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.modelContext)
+    private var modelContext
 
     @State private var isEditing = false
+
     @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
 
         SwipeActionRow(
-            content: { rowContent },
+            content: {
+                rowContent
+            },
             onEdit: {
                 isEditing = true
                 isTextFieldFocused = true
@@ -29,10 +34,10 @@ struct ChecklistListItemRow: View {
 
         HStack(spacing: 12) {
 
+            // MARK: - Checkmark
+
             Button {
-
                 toggleItem()
-
             } label: {
 
                 RoundedRectangle(
@@ -84,14 +89,20 @@ struct ChecklistListItemRow: View {
             }
             .buttonStyle(.plain)
 
+            // MARK: - Item
+
             if isEditing {
 
                 TextField(
                     "Item name",
                     text: $item.text
                 )
-                .font(.system(size: 16))
-                .focused($isTextFieldFocused)
+                .font(
+                    .system(size: 16)
+                )
+                .focused(
+                    $isTextFieldFocused
+                )
                 .submitLabel(.done)
                 .onSubmit {
                     commitEdit()
@@ -99,29 +110,58 @@ struct ChecklistListItemRow: View {
 
             } else {
 
-                Text(item.text)
-                    .font(
-                        .system(size: 16)
-                    )
-                    .foregroundStyle(
-                        item.checked
-                            ? Color.secondary
-                            : Color.primary
-                    )
-                    .strikethrough(
-                        item.checked,
-                        color: .secondary
-                    )
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                NavigationLink {
 
-                        isEditing = true
-                        isTextFieldFocused = true
+                    ChecklistListItemDetailView(
+                        item: item
+                    )
+
+                } label: {
+
+                    HStack(spacing: 8) {
+
+                        Text(item.text)
+                            .font(
+                                .system(size: 16)
+                            )
+                            .foregroundStyle(
+                                item.checked
+                                    ? Color.secondary
+                                    : Color.primary
+                            )
+                            .strikethrough(
+                                item.checked,
+                                color: .secondary
+                            )
+                            .frame(
+                                maxWidth: .infinity,
+                                alignment: .leading
+                            )
+
+                        // MARK: - Scheduled Time
+
+                        if item.hasScheduledTime,
+                           let scheduledDate =
+                                item.scheduledDate {
+
+                            Text(
+                                scheduledDate,
+                                format:
+                                    .dateTime
+                                        .hour()
+                                        .minute()
+                            )
+                            .font(
+                                .system(size: 16)
+                            )
+                            .foregroundStyle(
+                                .secondary
+                            )
+                            .fixedSize()
+                        }
                     }
+                }
+                .buttonStyle(.plain)
             }
 
             Spacer()
@@ -129,6 +169,8 @@ struct ChecklistListItemRow: View {
         .padding(.leading, 2)
         .frame(minHeight: 46)
     }
+
+    // MARK: - Toggle
 
     private func toggleItem() {
 
@@ -139,6 +181,8 @@ struct ChecklistListItemRow: View {
         save()
     }
 
+    // MARK: - Edit
+
     private func commitEdit() {
 
         let trimmed =
@@ -148,15 +192,23 @@ struct ChecklistListItemRow: View {
 
         item.text =
             trimmed.isEmpty
-            ? item.text
-            : trimmed
+                ? item.text
+                : trimmed
 
         isEditing = false
 
         save()
     }
 
+    // MARK: - Delete
+
     private func removeItem() {
+
+        if item.reminderEnabled {
+            NotificationManager.cancelReminder(
+                for: item
+            )
+        }
 
         modelContext.delete(item)
 
@@ -164,6 +216,8 @@ struct ChecklistListItemRow: View {
 
         save()
     }
+
+    // MARK: - Save
 
     private func save() {
 
