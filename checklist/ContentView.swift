@@ -34,8 +34,10 @@ struct ContentView: View {
     @State private var isAddingItem = false
     @State private var newItemText = ""
     @State private var repeatEveryDay = false
+
     @State private var selectedTime: Date =
         Self.defaultTime
+
     @State private var hasSelectedTime = false
     @State private var showingTimePicker = false
 
@@ -96,12 +98,16 @@ struct ContentView: View {
                     newItemText.isEmpty
                     ? "New item"
                     : newItemText,
+
                 selectedTime: $selectedTime,
+
                 onClear: {
 
                     hasSelectedTime = false
-                    selectedTime = Self.defaultTime
+                    selectedTime =
+                        Self.defaultTime
                 },
+
                 onDone: {
 
                     hasSelectedTime = true
@@ -144,10 +150,7 @@ private extension ContentView {
         }
     }
 
-    // List items that are scheduled for today.
-    //
-    // A date-only item is included.
-    // A date + time item is also included.
+    // MARK: Scheduled List Items
 
     var scheduledTodayChecklistItems:
         [ChecklistListItem] {
@@ -170,8 +173,7 @@ private extension ContentView {
             }
             .sorted { first, second in
 
-                // Items with a time come before
-                // date-only items.
+                // Items with a time come first.
 
                 if first.hasScheduledTime !=
                     second.hasScheduledTime {
@@ -182,6 +184,46 @@ private extension ContentView {
                 guard
                     let firstDate =
                         first.scheduledDate,
+
+                    let secondDate =
+                        second.scheduledDate
+                else {
+                    return false
+                }
+
+                return firstDate < secondDate
+            }
+    }
+
+    // MARK: Overdue List Items
+
+    var overdueChecklistItems:
+        [ChecklistListItem] {
+
+        let today =
+            Calendar.current.startOfDay(
+                for: Date()
+            )
+
+        return checklistItems
+            .filter { item in
+
+                guard
+                    let scheduledDate =
+                        item.scheduledDate
+                else {
+                    return false
+                }
+
+                return scheduledDate < today &&
+                    !item.checked
+            }
+            .sorted { first, second in
+
+                guard
+                    let firstDate =
+                        first.scheduledDate,
+
                     let secondDate =
                         second.scheduledDate
                 else {
@@ -294,7 +336,7 @@ private extension ContentView {
             Spacer()
                 .frame(height: 38)
 
-            // Existing TodayItems
+            // MARK: Existing Today Items
 
             ForEach(
                 visibleTodayItems
@@ -306,13 +348,15 @@ private extension ContentView {
                 .frame(height: 59)
                 .overlay(
                     Rectangle()
-                        .fill(Color(.systemGray5))
+                        .fill(
+                            Color(.systemGray5)
+                        )
                         .frame(height: 1),
                     alignment: .bottom
                 )
             }
 
-            // Scheduled items from other lists
+            // MARK: Scheduled Items From Other Lists
 
             ForEach(
                 scheduledTodayChecklistItems
@@ -323,7 +367,14 @@ private extension ContentView {
                 )
             }
 
-            // Add item
+            // MARK: Overdue
+
+            if !overdueChecklistItems.isEmpty {
+
+                overdueSection
+            }
+
+            // MARK: Add Item
 
             if isAddingItem {
 
@@ -335,8 +386,11 @@ private extension ContentView {
             }
         }
     }
+}
 
-    // MARK: Scheduled List Item Row
+// MARK: - Scheduled List Item Row
+
+private extension ContentView {
 
     func scheduledChecklistItemRow(
         _ item: ChecklistListItem
@@ -470,6 +524,147 @@ private extension ContentView {
     }
 }
 
+// MARK: - Overdue
+
+private extension ContentView {
+
+    var overdueSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 0
+        ) {
+
+            Text("Overdue")
+                .font(
+                    .system(
+                        size: 17,
+                        weight: .semibold
+                    )
+                )
+                .foregroundStyle(
+                    .secondary
+                )
+                .padding(.top, 24)
+                .padding(.bottom, 10)
+
+            ForEach(
+                overdueChecklistItems
+            ) { item in
+
+                overdueChecklistItemRow(
+                    item
+                )
+            }
+        }
+    }
+
+    func overdueChecklistItemRow(
+        _ item: ChecklistListItem
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 6
+        ) {
+
+            HStack(
+                spacing: 16
+            ) {
+
+                // Unchecked box
+
+                RoundedRectangle(
+                    cornerRadius: 5,
+                    style: .continuous
+                )
+                .stroke(
+                    Color(.systemGray3),
+                    lineWidth: 1.5
+                )
+                .frame(
+                    width: 22,
+                    height: 22
+                )
+
+                // Item name
+
+                Text(item.text)
+                    .font(
+                        .system(size: 18)
+                    )
+                    .foregroundStyle(
+                        .primary
+                    )
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+            }
+
+            HStack {
+
+                if let scheduledDate =
+                    item.scheduledDate {
+
+                    Text(
+                        "Due " +
+                        scheduledDate.formatted(
+                            .dateTime
+                                .day()
+                                .month(.abbreviated)
+                                .year()
+                        )
+                    )
+                    .font(
+                        .system(size: 13)
+                    )
+                    .foregroundStyle(
+                        .secondary
+                    )
+                }
+
+                Spacer()
+
+                NavigationLink {
+
+                    ChecklistListItemDetailView(
+                        item: item
+                    )
+
+                } label: {
+
+                    Text("Reschedule")
+                        .font(
+                            .system(
+                                size: 15,
+                                weight: .semibold
+                            )
+                        )
+                        .foregroundStyle(
+                            Color(
+                                red: 0.25,
+                                green: 0.48,
+                                blue: 0.39
+                            )
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.leading, 38)
+        }
+        .padding(.vertical, 11)
+        .overlay(
+            Rectangle()
+                .fill(
+                    Color(.systemGray5)
+                )
+                .frame(height: 1),
+            alignment: .bottom
+        )
+    }
+}
+
 // MARK: - Reordering
 
 private extension ContentView {
@@ -517,11 +712,16 @@ private extension ContentView {
         Button {
 
             isAddingItem = true
+
             newItemText = ""
+
             repeatEveryDay = false
+
             selectedTime =
                 Self.defaultTime
+
             hasSelectedTime = false
+
             isNewItemFieldFocused = true
 
         } label: {
@@ -582,6 +782,7 @@ private extension ContentView {
                     $isNewItemFieldFocused
                 )
                 .onSubmit {
+
                     addItem()
                 }
             }
@@ -735,7 +936,9 @@ private extension ContentView {
 
         guard !trimmedText.isEmpty
         else {
+
             isAddingItem = false
+
             return
         }
 
@@ -793,11 +996,16 @@ private extension ContentView {
         }
 
         newItemText = ""
+
         repeatEveryDay = false
+
         selectedTime =
             Self.defaultTime
+
         hasSelectedTime = false
+
         isAddingItem = false
+
         showingTimePicker = false
     }
 }
@@ -826,7 +1034,9 @@ private extension ContentView {
                 .padding(.top, 25)
                 .padding(.bottom, 18)
 
-            ForEach(lists) { list in
+            ForEach(
+                lists
+            ) { list in
 
                 ChecklistListRow(
                     list: list
@@ -857,7 +1067,9 @@ private extension ContentView {
                     weight: .medium
                 )
             )
-            .foregroundStyle(.white)
+            .foregroundStyle(
+                .white
+            )
             .frame(
                 width: 64,
                 height: 64
