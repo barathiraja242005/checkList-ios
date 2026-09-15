@@ -650,14 +650,29 @@ private extension TodayDatedView {
 
                 if isToday {
 
-                    ForEach(
-                        todayItems
-                    ) { item in
+                    List {
 
-                        TodayItemRow(
-                            item: item
-                        )
+                        ForEach(
+                            todayItems
+                        ) { item in
+
+                            TodayItemRow(
+                                item: item
+                            )
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparatorTint(Color(.systemGray5))
+                            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            .alignmentGuide(.listRowSeparatorTrailing) { $0.width }
+                            .listRowBackground(Color.clear)
+                        }
+                        .onMove(perform: moveItems)
                     }
+                    .listStyle(.plain)
+                    .scrollDisabled(true)
+                    .scrollContentBackground(.hidden)
+                    .frame(
+                        height: CGFloat(todayItems.count) * 59
+                    )
 
                 } else {
 
@@ -972,15 +987,6 @@ private extension TodayDatedView {
             return
         }
 
-        let nextPosition =
-            (
-                todayItems
-                    .map {
-                        $0.position
-                    }
-                    .max() ?? -1
-            ) + 1
-
         let newItem =
             TodayItem(
                 text: trimmedText,
@@ -992,8 +998,6 @@ private extension TodayDatedView {
 
                 checked: false,
 
-                position: nextPosition,
-
                 repeatsDaily:
                     repeatEveryDay
             )
@@ -1002,9 +1006,31 @@ private extension TodayDatedView {
             newItem
         )
 
+        TodayItemOrdering.insertChronologically(
+            newItem,
+            into: todayItems
+        )
+
         do {
 
             try modelContext.save()
+
+            if hasSelectedTime {
+
+                NotificationManager.requestAuthorization { granted in
+
+                    newItem.reminderEnabled = granted
+
+                    if granted {
+
+                        NotificationManager.scheduleReminder(
+                            for: newItem
+                        )
+                    }
+
+                    try? modelContext.save()
+                }
+            }
 
             newItemText = ""
             repeatEveryDay = false
@@ -1017,6 +1043,39 @@ private extension TodayDatedView {
 
             print(
                 "Failed to save TodayItem: \(error)"
+            )
+        }
+    }
+}
+
+// MARK: - Move Items
+
+private extension TodayDatedView {
+
+    func moveItems(
+        from source: IndexSet,
+        to destination: Int
+    ) {
+
+        var reordered = todayItems
+
+        reordered.move(
+            fromOffsets: source,
+            toOffset: destination
+        )
+
+        for (index, item) in reordered.enumerated() {
+            item.position = index
+        }
+
+        do {
+
+            try modelContext.save()
+
+        } catch {
+
+            print(
+                "Failed to reorder items: \(error)"
             )
         }
     }

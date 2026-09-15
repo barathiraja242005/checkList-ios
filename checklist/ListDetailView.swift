@@ -55,7 +55,7 @@ struct ListDetailView: View {
                 $0.list?.id == listID
             },
             sort: [
-                SortDescriptor(\ChecklistListItem.text)
+                SortDescriptor(\ChecklistListItem.position)
             ]
         )
     }
@@ -231,117 +231,45 @@ private extension ListDetailView {
 
     var itemsSection: some View {
 
-        VStack(spacing: 0) {
+        List {
 
             ForEach(allItems) { item in
 
-                listItemRow(item)
+                ChecklistListItemRow(
+                    item: item,
+                    list: list
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowSeparatorTint(Color(.systemGray6))
+                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                .alignmentGuide(.listRowSeparatorTrailing) { $0.width }
+                .listRowBackground(Color.clear)
             }
+            .onMove(perform: moveItems)
         }
+        .listStyle(.plain)
+        .scrollDisabled(true)
+        .scrollContentBackground(.hidden)
+        .frame(
+            height: CGFloat(allItems.count) * 47
+        )
     }
 
-    func listItemRow(
-        _ item: ChecklistListItem
-    ) -> some View {
-
-        HStack(spacing: 12) {
-
-            Button {
-
-                toggleItem(item)
-
-            } label: {
-
-                RoundedRectangle(
-                    cornerRadius: 5,
-                    style: .continuous
-                )
-                .stroke(
-                    item.checked
-                        ? Color.clear
-                        : Color(.systemGray3),
-                    lineWidth: 1.5
-                )
-                .background {
-
-                    RoundedRectangle(
-                        cornerRadius: 5,
-                        style: .continuous
-                    )
-                    .fill(
-                        item.checked
-                            ? Color(
-                                red: 0.18,
-                                green: 0.48,
-                                blue: 0.36
-                            )
-                            : Color.clear
-                    )
-                }
-                .overlay {
-
-                    if item.checked {
-
-                        Image(
-                            systemName: "checkmark"
-                        )
-                        .font(
-                            .system(
-                                size: 11,
-                                weight: .bold
-                            )
-                        )
-                        .foregroundStyle(.white)
-                    }
-                }
-                .frame(
-                    width: 22,
-                    height: 22
-                )
-            }
-            .buttonStyle(.plain)
-
-            Text(item.text)
-                .font(
-                    .system(size: 16)
-                )
-                .foregroundStyle(
-                    item.checked
-                        ? Color.secondary
-                        : Color.primary
-                )
-                .strikethrough(
-                    item.checked,
-                    color: .secondary
-                )
-
-            Spacer()
-        }
-        .frame(minHeight: 46)
-        .overlay(
-            alignment: .bottom
-        ) {
-
-            Rectangle()
-                .fill(
-                    Color(.systemGray6)
-                )
-                .frame(height: 1)
-        }
-    }
-}
-
-// MARK: - Toggle Item
-
-private extension ListDetailView {
-
-    func toggleItem(
-        _ item: ChecklistListItem
+    func moveItems(
+        from source: IndexSet,
+        to destination: Int
     ) {
 
-        item.checked.toggle()
+        var reordered = allItems
 
-        list.updateCounts()
+        reordered.move(
+            fromOffsets: source,
+            toOffset: destination
+        )
+
+        for (index, item) in reordered.enumerated() {
+            item.position = index
+        }
 
         do {
 
@@ -350,7 +278,7 @@ private extension ListDetailView {
         } catch {
 
             print(
-                "Failed to save item change: \(error)"
+                "Failed to reorder items: \(error)"
             )
         }
     }
@@ -433,9 +361,17 @@ private extension ListDetailView {
             return
         }
 
+        let nextPosition =
+            (
+                allItems
+                    .map { $0.position }
+                    .max() ?? -1
+            ) + 1
+
         let newItem = ChecklistListItem(
             text: trimmed,
             checked: false,
+            position: nextPosition,
             list: list
         )
 
@@ -529,9 +465,17 @@ private extension ListDetailView {
         _ suggestion: String
     ) {
 
+        let nextPosition =
+            (
+                allItems
+                    .map { $0.position }
+                    .max() ?? -1
+            ) + 1
+
         let newItem = ChecklistListItem(
             text: suggestion,
             checked: false,
+            position: nextPosition,
             list: list
         )
 

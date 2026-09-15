@@ -1,10 +1,71 @@
 import SwiftUI
+import SwiftData
 
 struct TodayItemRow: View {
 
     @Bindable var item: TodayItem
 
+    @Environment(\.modelContext) private var modelContext
+
+    @Query private var occurrences: [Occurrence]
+
+    @State private var navigateToDetail = false
+    @State private var showingRemoveSheet = false
+
     var body: some View {
+
+        SwipeActionRow(
+            content: { rowContent },
+            onEdit: {
+                navigateToDetail = true
+            },
+            onDelete: {
+                showingRemoveSheet = true
+            }
+        )
+            .navigationDestination(
+                isPresented: $navigateToDetail
+            ) {
+
+                ItemDetailView(
+                    item: item
+                )
+            }
+            .sheet(
+                isPresented: $showingRemoveSheet
+            ) {
+
+                RemoveItemSheet(
+                    itemText: item.text,
+                    onJustToday: {
+
+                        TodayItemRemoval.removeJustToday(
+                            item,
+                            context: modelContext
+                        )
+
+                        showingRemoveSheet = false
+                    },
+                    onTodayAndFuture: {
+
+                        TodayItemRemoval.removeTodayAndFuture(
+                            item,
+                            occurrences: occurrences,
+                            context: modelContext
+                        )
+
+                        showingRemoveSheet = false
+                    },
+                    onCancel: {
+                        showingRemoveSheet = false
+                    }
+                )
+                .presentationDetents([.height(390)])
+                .presentationDragIndicator(.hidden)
+            }
+    }
+
+    private var rowContent: some View {
 
         HStack(spacing: 16) {
 
@@ -24,11 +85,9 @@ struct TodayItemRow: View {
 
             // MARK: - Item Name
 
-            NavigationLink {
+            Button {
 
-                ItemDetailView(
-                    item: item
-                )
+                navigateToDetail = true
 
             } label: {
 
@@ -64,16 +123,7 @@ struct TodayItemRow: View {
                 .foregroundStyle(.secondary)
             }
         }
+        .padding(.leading, 2)
         .frame(minHeight: 58)
-        .overlay(
-            alignment: .bottom
-        ) {
-
-            Rectangle()
-                .fill(
-                    Color(.systemGray5)
-                )
-                .frame(height: 1)
-        }
     }
 }

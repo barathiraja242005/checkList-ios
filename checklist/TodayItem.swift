@@ -11,6 +11,7 @@ final class TodayItem {
     var position: Int
     var repeatsDaily: Bool
     var skippedDate: Date?
+    var reminderEnabled: Bool = false
 
     init(
         id: UUID = UUID(),
@@ -19,7 +20,8 @@ final class TodayItem {
         checked: Bool = false,
         position: Int = 0,
         repeatsDaily: Bool = false,
-        skippedDate: Date? = nil
+        skippedDate: Date? = nil,
+        reminderEnabled: Bool = false
     ) {
         self.id = id
         self.text = text
@@ -28,5 +30,6 @@ final class TodayItem {
         self.position = position
         self.repeatsDaily = repeatsDaily
         self.skippedDate = skippedDate
+        self.reminderEnabled = reminderEnabled
     }
 }
