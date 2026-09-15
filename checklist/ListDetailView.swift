@@ -240,7 +240,10 @@ private extension ListDetailView {
 
     var itemsSection: some View {
 
-        List {
+        VStack(
+            alignment: .leading,
+            spacing: 0
+        ) {
 
             ForEach(allItems) { item in
 
@@ -248,36 +251,15 @@ private extension ListDetailView {
                     item: item,
                     list: list
                 )
-                .listRowInsets(
-                    EdgeInsets()
-                )
-                .listRowSeparatorTint(
-                    Color(.systemGray6)
-                )
-                .alignmentGuide(
-                    .listRowSeparatorLeading
-                ) { _ in
-                    0
-                }
-                .alignmentGuide(
-                    .listRowSeparatorTrailing
-                ) { $0.width }
-                .listRowBackground(
-                    Color.clear
-                )
+                .frame(height: 47)
+
+                Rectangle()
+                    .fill(
+                        Color(.systemGray6)
+                    )
+                    .frame(height: 1)
             }
-            .onMove(
-                perform: moveItems
-            )
         }
-        .listStyle(.plain)
-        .scrollDisabled(true)
-        .scrollContentBackground(.hidden)
-        .frame(
-            height: CGFloat(
-                allItems.count
-            ) * 47
-        )
     }
 
     func moveItems(
