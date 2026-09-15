@@ -3,7 +3,8 @@ import SwiftData
 
 struct ContentView: View {
 
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.modelContext)
+    private var modelContext
 
     @Query(
         sort: [
@@ -29,9 +30,11 @@ struct ContentView: View {
     @State private var hasSelectedTime = false
     @State private var showingTimePicker = false
 
-    @FocusState private var isNewItemFieldFocused: Bool
+    @FocusState
+    private var isNewItemFieldFocused: Bool
 
     private static var defaultTime: Date {
+
         Calendar.current.date(
             bySettingHour: 21,
             minute: 30,
@@ -83,11 +86,13 @@ struct ContentView: View {
                     $selectedTime,
 
                 onClear: {
+
                     hasSelectedTime = false
                     selectedTime = Self.defaultTime
                 },
 
                 onDone: {
+
                     hasSelectedTime = true
                     addItem()
                 }
@@ -112,7 +117,8 @@ struct ContentView: View {
 
         return todayItems.filter { item in
 
-            guard let skippedDate = item.skippedDate
+            guard let skippedDate =
+                item.skippedDate
             else {
                 return true
             }
@@ -152,7 +158,8 @@ struct ContentView: View {
 
                     Text(
                         Date(),
-                        format: .dateTime
+                        format:
+                            .dateTime
                             .weekday(.wide)
                             .day()
                             .month(.wide)
@@ -165,7 +172,8 @@ struct ContentView: View {
                     )
 
                     Image(
-                        systemName: "chevron.right"
+                        systemName:
+                            "chevron.right"
                     )
                     .font(
                         .system(
@@ -174,7 +182,9 @@ struct ContentView: View {
                         )
                     )
                 }
-                .font(.system(size: 17))
+                .font(
+                    .system(size: 17)
+                )
                 .foregroundStyle(.secondary)
             }
         }
@@ -199,24 +209,43 @@ struct ContentView: View {
 
             List {
 
-                ForEach(visibleTodayItems) { item in
+                ForEach(
+                    visibleTodayItems
+                ) { item in
 
                     TodayItemRow(
                         item: item
                     )
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparatorTint(Color(.systemGray5))
-                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                    .alignmentGuide(.listRowSeparatorTrailing) { $0.width }
-                    .listRowBackground(Color.clear)
+                    .listRowInsets(
+                        EdgeInsets()
+                    )
+                    .listRowSeparatorTint(
+                        Color(.systemGray5)
+                    )
+                    .alignmentGuide(
+                        .listRowSeparatorLeading
+                    ) { _ in
+                        0
+                    }
+                    .alignmentGuide(
+                        .listRowSeparatorTrailing
+                    ) { $0.width }
+                    .listRowBackground(
+                        Color.clear
+                    )
                 }
-                .onMove(perform: moveItems)
+                .onMove(
+                    perform: moveItems
+                )
             }
             .listStyle(.plain)
             .scrollDisabled(true)
             .scrollContentBackground(.hidden)
             .frame(
-                height: CGFloat(visibleTodayItems.count) * 59
+                height:
+                    CGFloat(
+                        visibleTodayItems.count
+                    ) * 59
             )
 
             if isAddingItem {
@@ -235,14 +264,19 @@ struct ContentView: View {
         to destination: Int
     ) {
 
-        var reordered = visibleTodayItems
+        var reordered =
+            visibleTodayItems
 
         reordered.move(
             fromOffsets: source,
             toOffset: destination
         )
 
-        for (index, item) in reordered.enumerated() {
+        for (
+            index,
+            item
+        ) in reordered.enumerated() {
+
             item.position = index
         }
 
@@ -257,6 +291,8 @@ struct ContentView: View {
             )
         }
     }
+
+    // MARK: - Add Item Row
 
     private var addItemRow: some View {
 
@@ -274,12 +310,20 @@ struct ContentView: View {
             HStack(spacing: 18) {
 
                 Text("+")
-                    .font(.system(size: 21))
-                    .foregroundStyle(.secondary)
+                    .font(
+                        .system(size: 21)
+                    )
+                    .foregroundStyle(
+                        .secondary
+                    )
 
                 Text("Add item")
-                    .font(.system(size: 18))
-                    .foregroundStyle(.secondary)
+                    .font(
+                        .system(size: 18)
+                    )
+                    .foregroundStyle(
+                        .secondary
+                    )
 
                 Spacer()
             }
@@ -288,6 +332,8 @@ struct ContentView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Add Item Composer
+
     private var addItemComposer: some View {
 
         VStack(spacing: 0) {
@@ -295,17 +341,26 @@ struct ContentView: View {
             HStack(spacing: 18) {
 
                 Text("+")
-                    .font(.system(size: 21))
-                    .foregroundStyle(.secondary)
+                    .font(
+                        .system(size: 21)
+                    )
+                    .foregroundStyle(
+                        .secondary
+                    )
 
                 TextField(
                     "Add item",
                     text: $newItemText
                 )
-                .font(.system(size: 18))
+                .font(
+                    .system(size: 18)
+                )
                 .submitLabel(.done)
-                .focused($isNewItemFieldFocused)
+                .focused(
+                    $isNewItemFieldFocused
+                )
                 .onSubmit {
+
                     addItem()
                 }
             }
@@ -322,6 +377,12 @@ struct ContentView: View {
             .padding(.leading, 40)
             .padding(.bottom, 14)
         }
+
+        // TOP DIVIDER TEMPORARILY DISABLED
+        // This is a diagnostic test to identify
+        // which divider is creating the duplicate line.
+
+        /*
         .overlay(
             alignment: .top
         ) {
@@ -332,6 +393,10 @@ struct ContentView: View {
                 )
                 .frame(height: 1)
         }
+        */
+
+        // BOTTOM DIVIDER REMAINS
+
         .overlay(
             alignment: .bottom
         ) {
@@ -343,6 +408,8 @@ struct ContentView: View {
                 .frame(height: 1)
         }
     }
+
+    // MARK: - Time Chip
 
     private var timeChip: some View {
 
@@ -367,34 +434,52 @@ struct ContentView: View {
                 )
                 : "Set time"
             )
-            .font(.system(size: 16))
+            .font(
+                .system(size: 16)
+            )
             .foregroundStyle(
+
                 hasSelectedTime
+
                 ? Color(
                     red: 0.25,
                     green: 0.48,
                     blue: 0.39
                 )
+
                 : Color.secondary
             )
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(
+                .horizontal,
+                16
+            )
+            .padding(
+                .vertical,
+                8
+            )
             .background {
 
                 Capsule()
                     .fill(
+
                         hasSelectedTime
+
                         ? Color(
                             red: 0.92,
                             green: 0.96,
                             blue: 0.94
                         )
-                        : Color(.systemGray6)
+
+                        : Color(
+                            .systemGray6
+                        )
                     )
             }
         }
         .buttonStyle(.plain)
     }
+
+    // MARK: - Repeat Chip
 
     private var repeatChip: some View {
 
@@ -405,63 +490,86 @@ struct ContentView: View {
         } label: {
 
             Text("Every day")
-                .font(.system(size: 16))
+                .font(
+                    .system(size: 16)
+                )
                 .foregroundStyle(
+
                     repeatEveryDay
+
                     ? Color(
                         red: 0.25,
                         green: 0.48,
                         blue: 0.39
                     )
+
                     : Color.secondary
                 )
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(
+                    .horizontal,
+                    16
+                )
+                .padding(
+                    .vertical,
+                    8
+                )
                 .background {
 
                     Capsule()
                         .fill(
+
                             repeatEveryDay
+
                             ? Color(
                                 red: 0.92,
                                 green: 0.96,
                                 blue: 0.94
                             )
-                            : Color(.systemGray6)
+
+                            : Color(
+                                .systemGray6
+                            )
                         )
                 }
         }
         .buttonStyle(.plain)
     }
 
+    // MARK: - Add Item
+
     private func addItem() {
 
         let trimmedText =
             newItemText.trimmingCharacters(
-                in: .whitespacesAndNewlines
+                in:
+                    .whitespacesAndNewlines
             )
 
         guard !trimmedText.isEmpty
         else {
+
             isAddingItem = false
             return
         }
 
-        let newItem = TodayItem(
-            text: trimmedText,
+        let newItem =
+            TodayItem(
+                text: trimmedText,
 
-            remindAt:
-                hasSelectedTime
-                ? selectedTime
-                : nil,
+                remindAt:
+                    hasSelectedTime
+                    ? selectedTime
+                    : nil,
 
-            checked: false,
+                checked: false,
 
-            repeatsDaily:
-                repeatEveryDay
+                repeatsDaily:
+                    repeatEveryDay
+            )
+
+        modelContext.insert(
+            newItem
         )
-
-        modelContext.insert(newItem)
 
         TodayItemOrdering.insertChronologically(
             newItem,
@@ -474,14 +582,18 @@ struct ContentView: View {
 
         } catch {
 
-            print("Failed to save new item: \(error)")
+            print(
+                "Failed to save new item: \(error)"
+            )
         }
 
         if hasSelectedTime {
 
-            NotificationManager.requestAuthorization { granted in
+            NotificationManager.requestAuthorization {
+                granted in
 
-                newItem.reminderEnabled = granted
+                newItem.reminderEnabled =
+                    granted
 
                 if granted {
 
@@ -518,7 +630,9 @@ struct ContentView: View {
                         weight: .semibold
                     )
                 )
-                .foregroundStyle(.secondary)
+                .foregroundStyle(
+                    .secondary
+                )
                 .padding(.top, 25)
                 .padding(.bottom, 18)
 
@@ -541,26 +655,30 @@ struct ContentView: View {
 
         } label: {
 
-            Image(systemName: "plus")
-                .font(
-                    .system(
-                        size: 25,
-                        weight: .medium
-                    )
+            Image(
+                systemName: "plus"
+            )
+            .font(
+                .system(
+                    size: 25,
+                    weight: .medium
                 )
-                .foregroundStyle(.white)
-                .frame(
-                    width: 64,
-                    height: 64
+            )
+            .foregroundStyle(.white)
+            .frame(
+                width: 64,
+                height: 64
+            )
+            .background(
+                Color(
+                    red: 0.12,
+                    green: 0.42,
+                    blue: 0.31
                 )
-                .background(
-                    Color(
-                        red: 0.12,
-                        green: 0.42,
-                        blue: 0.31
-                    )
-                )
-                .clipShape(Circle())
+            )
+            .clipShape(
+                Circle()
+            )
         }
         .buttonStyle(.plain)
         .padding(.trailing, 24)

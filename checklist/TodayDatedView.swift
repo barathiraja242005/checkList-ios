@@ -92,7 +92,7 @@ struct TodayDatedView: View {
 
             dateStrip
 
-            Divider()
+            // Divider()
 
             progressHeader
 
@@ -124,13 +124,18 @@ struct TodayDatedView: View {
                     newItemText.isEmpty
                     ? "New item"
                     : newItemText,
+
                 selectedTime:
                     $selectedTime,
+
                 onClear: {
+
                     hasSelectedTime = false
                     selectedTime = Self.defaultTime
                 },
+
                 onDone: {
+
                     hasSelectedTime = true
                     addItem()
                 }
@@ -197,14 +202,15 @@ private extension TodayDatedView {
 
     var fullDateTitle: some View {
 
-        Text(
-            selectedDate.formatted(
-                .dateTime
-                    .weekday(.wide)
-                    .day()
-                    .month(.wide)
-            )
-        )
+//        Text(
+//            selectedDate.formatted(
+//                .dateTime
+//                    .weekday(.wide)
+//                    .day()
+//                    .month(.wide)
+//            )
+//        )
+        Text("DEBUG SCREEN")
         .font(
             .system(
                 size: 28,
@@ -409,11 +415,6 @@ private extension TodayDatedView {
         .padding(.vertical, 17)
     }
 
-    // Items that should actually appear on today's list.
-    //
-    // A recurring item skipped for today is hidden,
-    // but it remains available again on future days.
-
     var visibleTodayItems: [TodayItem] {
 
         let calendar = Calendar.current
@@ -421,7 +422,8 @@ private extension TodayDatedView {
 
         return todayItems.filter { item in
 
-            guard let skippedDate = item.skippedDate
+            guard let skippedDate =
+                item.skippedDate
             else {
                 return true
             }
@@ -450,7 +452,6 @@ private extension TodayDatedView {
     var visibleItemCount: Int {
 
         if isToday {
-
             return visibleTodayItems.count
         }
 
@@ -577,8 +578,10 @@ private extension TodayDatedView {
                 OccurrenceItem(
                     sourceItemID:
                         todayItem.id,
+
                     text:
                         todayItem.text,
+
                     remindAt:
                         copyTime(
                             from:
@@ -586,10 +589,14 @@ private extension TodayDatedView {
                             to:
                                 selectedDate
                         ),
+
                     position:
                         nextPosition,
+
                     checked: false,
+
                     checkedAt: nil,
+
                     occurrence:
                         occurrence
                 )
@@ -662,7 +669,9 @@ private extension TodayDatedView {
 
                 if isToday {
 
-                    List {
+                    VStack(
+                        spacing: 0
+                    ) {
 
                         ForEach(
                             visibleTodayItems
@@ -671,37 +680,9 @@ private extension TodayDatedView {
                             TodayItemRow(
                                 item: item
                             )
-                            .listRowInsets(
-                                EdgeInsets()
-                            )
-                            .listRowSeparatorTint(
-                                Color(.systemGray5)
-                            )
-                            .alignmentGuide(
-                                .listRowSeparatorLeading
-                            ) { _ in
-                                0
-                            }
-                            .alignmentGuide(
-                                .listRowSeparatorTrailing
-                            ) { $0.width }
-                            .listRowBackground(
-                                Color.clear
-                            )
+                            .frame(height: 59)
                         }
-                        .onMove(
-                            perform: moveItems
-                        )
                     }
-                    .listStyle(.plain)
-                    .scrollDisabled(true)
-                    .scrollContentBackground(.hidden)
-                    .frame(
-                        height:
-                            CGFloat(
-                                visibleTodayItems.count
-                            ) * 59
-                    )
 
                 } else {
 
@@ -717,25 +698,23 @@ private extension TodayDatedView {
                     }
                 }
 
+                // MARK: - Diagnostic Test
+                //
+                // Temporarily removing the Add Item
+                // composer from the layout.
+                //
+                // We are testing whether the two
+                // horizontal lines come from the
+                // composer area.
+
                 if isToday {
 
-                    if isAddingItem {
-
-                        composer
-
-                    } else {
-
-                        addItemButton
-                    }
+                    EmptyView()
                 }
             }
             .padding(.horizontal, 32)
 
-            if isToday &&
-                isAddingItem {
-
-                composerHint
-            }
+            // Composer hint also disabled for this test.
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(
@@ -826,6 +805,8 @@ private extension TodayDatedView {
             .padding(.leading, 40)
             .padding(.bottom, 14)
         }
+
+        /*
         .overlay(
             alignment: .top
         ) {
@@ -836,6 +817,8 @@ private extension TodayDatedView {
                 )
                 .frame(height: 1)
         }
+        */
+
         .overlay(
             alignment: .bottom
         ) {
@@ -1043,9 +1026,11 @@ private extension TodayDatedView {
 
             if hasSelectedTime {
 
-                NotificationManager.requestAuthorization { granted in
+                NotificationManager.requestAuthorization {
+                    granted in
 
-                    newItem.reminderEnabled = granted
+                    newItem.reminderEnabled =
+                        granted
 
                     if granted {
 

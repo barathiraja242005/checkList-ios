@@ -12,28 +12,19 @@ struct TodayItemRow: View {
     private var occurrences: [Occurrence]
 
     @State private var navigateToDetail = false
+
     @State private var showingRemoveSheet = false
 
     var body: some View {
 
-        SwipeActionRow(
-            content: {
-                rowContent
-            },
-            onEdit: {
-                navigateToDetail = true
-            },
-            onDelete: {
-                showingRemoveSheet = true
+        rowContent
+            .navigationDestination(
+                isPresented: $navigateToDetail
+            ) {
+                ItemDetailView(
+                    item: item
+                )
             }
-        )
-        .navigationDestination(
-            isPresented: $navigateToDetail
-        ) {
-            ItemDetailView(
-                item: item
-            )
-        }
 
         // MARK: - Remove Sheet
         //
@@ -81,8 +72,11 @@ struct TodayItemRow: View {
             // MARK: - Checkbox
 
             Button {
+
                 item.checked.toggle()
+
             } label: {
+
                 CheckmarkBox(
                     isChecked: item.checked
                 )
@@ -92,10 +86,15 @@ struct TodayItemRow: View {
             // MARK: - Item Name
 
             Button {
+
                 navigateToDetail = true
+
             } label: {
+
                 Text(item.text)
-                    .font(.system(size: 18))
+                    .font(
+                        .system(size: 18)
+                    )
                     .foregroundStyle(
                         item.checked
                             ? Color.secondary
@@ -122,11 +121,16 @@ struct TodayItemRow: View {
                         .hour()
                         .minute()
                 )
-                .font(.system(size: 16))
-                .foregroundStyle(.secondary)
+                .font(
+                    .system(size: 16)
+                )
+                .foregroundStyle(
+                    .secondary
+                )
             }
         }
         .padding(.leading, 2)
-        .frame(minHeight: 58)
+        .frame( minHeight: 58)
+        
     }
 }

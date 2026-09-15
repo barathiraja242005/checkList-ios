@@ -21,6 +21,7 @@ struct ListDetailView: View {
     private var allItems: [ChecklistListItem]
 
     // MARK: - Suggestions
+
     // TODO: Re-enable "Add from your lists" feature in the future.
 
     /*
@@ -99,6 +100,7 @@ struct ListDetailView: View {
         .sheet(
             isPresented: $showingSuggestions
         ) {
+
             suggestionSheet
                 .presentationDetents(
                     [.medium, .large]
@@ -189,6 +191,7 @@ private extension ListDetailView {
 
 /*
  // MARK: - Add From Lists
+
  // TODO: Re-enable this feature in the future.
 
 private extension ListDetailView {
@@ -245,7 +248,10 @@ private extension ListDetailView {
             spacing: 0
         ) {
 
-            ForEach(allItems) { item in
+            ForEach(
+                Array(allItems.enumerated()),
+                id: \.element.id
+            ) { index, item in
 
                 ChecklistListItemRow(
                     item: item,
@@ -253,11 +259,14 @@ private extension ListDetailView {
                 )
                 .frame(height: 47)
 
-                Rectangle()
-                    .fill(
-                        Color(.systemGray6)
-                    )
-                    .frame(height: 1)
+                if index < allItems.count - 1 {
+
+                    Rectangle()
+                        .fill(
+                            Color(.systemGray6)
+                        )
+                        .frame(height: 1)
+                }
             }
         }
     }
@@ -405,6 +414,7 @@ private extension ListDetailView {
 
 /*
  // MARK: - Suggestions Sheet
+
  // TODO: Re-enable this feature in the future.
 
 private extension ListDetailView {
