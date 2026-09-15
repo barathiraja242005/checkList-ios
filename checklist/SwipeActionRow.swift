@@ -77,7 +77,10 @@ struct SwipeActionRow<Content: View>: View {
                     }
             }
         }
-        .gesture(dragGesture)
+        // List installs its own pan recognisers on every row, and both
+        // .gesture() and .simultaneousGesture() lose that arbitration, so the
+        // swipe never fires. High priority is what actually claims the drag.
+        .highPriorityGesture(dragGesture)
     }
 
     // The label sits at a fixed offset from its edge; clipping the container

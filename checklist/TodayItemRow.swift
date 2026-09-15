@@ -24,6 +24,21 @@ struct TodayItemRow: View {
                 navigateToDetail = true
             },
             onDelete: {
+
+                // The sheet only offers a meaningful choice for repeating
+                // items; a one-off item has no future days to keep.
+                guard item.repeatsDaily
+                else {
+
+                    TodayItemRemoval.removeTodayAndFuture(
+                        item,
+                        occurrences: occurrences,
+                        context: modelContext
+                    )
+
+                    return
+                }
+
                 showingRemoveSheet = true
             }
         )
@@ -36,40 +51,36 @@ struct TodayItemRow: View {
         }
 
         // MARK: - Remove Sheet
-        //
-        // Temporarily commented out while we rebuild
-        // the remove bottom sheet step by step.
-        //
-        // .sheet(
-        //     isPresented: $showingRemoveSheet
-        // ) {
-        //     RemoveItemSheet(
-        //         itemText: item.text,
-        //         onJustToday: {
-        //             TodayItemRemoval.removeJustToday(
-        //                 item,
-        //                 context: modelContext
-        //             )
-        //
-        //             showingRemoveSheet = false
-        //         },
-        //         onTodayAndFuture: {
-        //             TodayItemRemoval.removeTodayAndFuture(
-        //                 item,
-        //                 occurrences: occurrences,
-        //                 context: modelContext
-        //             )
-        //
-        //             showingRemoveSheet = false
-        //         },
-        //         onCancel: {
-        //             showingRemoveSheet = false
-        //         }
-        //     )
-        //     .presentationSizing(.fitted)
-        //     .presentationDragIndicator(.visible)
-        //     .presentationBackground(Color.white)
-        // }
+        .sheet(
+            isPresented: $showingRemoveSheet
+        ) {
+            RemoveItemSheet(
+                itemText: item.text,
+                onJustToday: {
+                    TodayItemRemoval.removeJustToday(
+                        item,
+                        context: modelContext
+                    )
+
+                    showingRemoveSheet = false
+                },
+                onTodayAndFuture: {
+                    TodayItemRemoval.removeTodayAndFuture(
+                        item,
+                        occurrences: occurrences,
+                        context: modelContext
+                    )
+
+                    showingRemoveSheet = false
+                },
+                onCancel: {
+                    showingRemoveSheet = false
+                }
+            )
+            .presentationDetents([.height(290)])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.white)
+        }
     }
 
     // MARK: - Row Content
