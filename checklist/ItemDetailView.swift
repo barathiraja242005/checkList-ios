@@ -33,6 +33,7 @@ struct ItemDetailView: View {
         }
         .background(Color.white)
         .navigationBarBackButtonHidden(true)
+        .backSwipe()
         .onAppear {
             selectedTime = item.remindAt ?? Date()
         }

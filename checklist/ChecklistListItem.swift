@@ -9,6 +9,14 @@ final class ChecklistListItem {
     var checked: Bool
     var position: Int = 0
 
+    // MARK: - Scheduling
+
+    var scheduledDate: Date?
+    var hasScheduledTime: Bool = false
+    var reminderEnabled: Bool = false
+
+    // MARK: - Relationship
+
     var list: ChecklistList?
 
     init(
@@ -16,12 +24,18 @@ final class ChecklistListItem {
         text: String,
         checked: Bool = false,
         position: Int = 0,
+        scheduledDate: Date? = nil,
+        hasScheduledTime: Bool = false,
+        reminderEnabled: Bool = false,
         list: ChecklistList? = nil
     ) {
         self.id = id
         self.text = text
         self.checked = checked
         self.position = position
+        self.scheduledDate = scheduledDate
+        self.hasScheduledTime = hasScheduledTime
+        self.reminderEnabled = reminderEnabled
         self.list = list
     }
 }

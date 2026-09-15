@@ -21,6 +21,7 @@ struct ListDetailView: View {
     private var allItems: [ChecklistListItem]
 
     // MARK: - Suggestions
+
     // TODO: Re-enable "Add from your lists" feature in the future.
 
     /*
@@ -94,11 +95,13 @@ struct ListDetailView: View {
         }
         .background(Color.white)
         .navigationBarBackButtonHidden(true)
+        .backSwipe()
 
         /*
         .sheet(
             isPresented: $showingSuggestions
         ) {
+
             suggestionSheet
                 .presentationDetents(
                     [.medium, .large]
@@ -189,6 +192,7 @@ private extension ListDetailView {
 
 /*
  // MARK: - Add From Lists
+
  // TODO: Re-enable this feature in the future.
 
 private extension ListDetailView {
@@ -240,44 +244,32 @@ private extension ListDetailView {
 
     var itemsSection: some View {
 
-        List {
+        VStack(
+            alignment: .leading,
+            spacing: 0
+        ) {
 
-            ForEach(allItems) { item in
+            ForEach(
+                Array(allItems.enumerated()),
+                id: \.element.id
+            ) { index, item in
 
                 ChecklistListItemRow(
                     item: item,
                     list: list
                 )
-                .listRowInsets(
-                    EdgeInsets()
-                )
-                .listRowSeparatorTint(
-                    Color(.systemGray6)
-                )
-                .alignmentGuide(
-                    .listRowSeparatorLeading
-                ) { _ in
-                    0
+                .frame(height: 47)
+
+                if index < allItems.count - 1 {
+
+                    Rectangle()
+                        .fill(
+                            Color(.systemGray6)
+                        )
+                        .frame(height: 1)
                 }
-                .alignmentGuide(
-                    .listRowSeparatorTrailing
-                ) { $0.width }
-                .listRowBackground(
-                    Color.clear
-                )
             }
-            .onMove(
-                perform: moveItems
-            )
         }
-        .listStyle(.plain)
-        .scrollDisabled(true)
-        .scrollContentBackground(.hidden)
-        .frame(
-            height: CGFloat(
-                allItems.count
-            ) * 47
-        )
     }
 
     func moveItems(
@@ -423,6 +415,7 @@ private extension ListDetailView {
 
 /*
  // MARK: - Suggestions Sheet
+
  // TODO: Re-enable this feature in the future.
 
 private extension ListDetailView {
