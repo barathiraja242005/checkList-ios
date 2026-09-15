@@ -14,6 +14,11 @@ struct ChecklistListItemDetailView: View {
     @State private var showingTimePicker = false
     @State private var selectedTime = Date()
 
+    // Kept so an emptied name can be restored rather than saved blank.
+    @State private var nameBeforeEditing = ""
+
+    @FocusState private var isNameFocused: Bool
+
     var body: some View {
         VStack(
             alignment: .leading,
@@ -28,8 +33,16 @@ struct ChecklistListItemDetailView: View {
         .backSwipe()
         
         .onAppear {
+
             selectedTime =
                 item.scheduledDate ?? Date()
+
+            nameBeforeEditing = item.text
+
+            isNameFocused = true
+        }
+        .onDisappear {
+            commitName()
         }
         .sheet(
             isPresented: $showingTimePicker
@@ -102,18 +115,26 @@ private extension ChecklistListItemDetailView {
             alignment: .leading,
             spacing: 0
         ) {
-            Text(item.text)
-                .font(
-                    .system(
-                        size: 29,
-                        weight: .bold
-                    )
+            TextField(
+                "Item name",
+                text: $item.text,
+                axis: .vertical
+            )
+            .font(
+                .system(
+                    size: 29,
+                    weight: .bold
                 )
-                .foregroundStyle(
-                    .primary
-                )
-                .padding(.top, 12)
-                .padding(.bottom, 28)
+            )
+            .foregroundStyle(.primary)
+            .textFieldStyle(.plain)
+            .focused($isNameFocused)
+            .submitLabel(.done)
+            .onSubmit {
+                commitName()
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 28)
 
             dateRow
             timeRow
@@ -131,6 +152,7 @@ private extension ChecklistListItemDetailView {
         DatePicker(
             "Date",
             selection: dateBinding,
+            in: earliestSelectableDate...,
             displayedComponents: [.date]
         )
         .font(
@@ -144,6 +166,28 @@ private extension ChecklistListItemDetailView {
                 )
                 .frame(height: 1),
             alignment: .bottom
+        )
+    }
+
+    // Scheduling is forward-looking, so today is the floor. An already
+    // overdue item keeps its own date as the bound, otherwise its current
+    // value would sit outside the range and the picker would misreport it.
+    var earliestSelectableDate: Date {
+
+        let startOfToday = Calendar.current.startOfDay(
+            for: Date()
+        )
+
+        guard let scheduledDate = item.scheduledDate
+        else {
+            return startOfToday
+        }
+
+        return min(
+            Calendar.current.startOfDay(
+                for: scheduledDate
+            ),
+            startOfToday
         )
     }
 
@@ -494,6 +538,29 @@ private extension ChecklistListItemDetailView {
                 }
             }
         )
+    }
+}
+
+// MARK: - Name
+
+private extension ChecklistListItemDetailView {
+
+    func commitName() {
+
+        let trimmed = item.text.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        // A blank name would leave an unidentifiable row, so fall back to
+        // whatever it was called before editing started.
+        item.text =
+            trimmed.isEmpty
+            ? nameBeforeEditing
+            : trimmed
+
+        isNameFocused = false
+
+        saveChanges()
     }
 }
 

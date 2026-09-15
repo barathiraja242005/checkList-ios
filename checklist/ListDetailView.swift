@@ -44,6 +44,8 @@ struct ListDetailView: View {
     // MARK: - Add Item
 
     @State private var isAddingItem = false
+
+    @FocusState private var isNewItemFocused: Bool
     @State private var newItemText = ""
 
     // MARK: - Init
@@ -321,6 +323,11 @@ private extension ListDetailView {
                     .font(
                         .system(size: 16)
                     )
+                    .focused($isNewItemFocused)
+                    .submitLabel(.done)
+                    .onSubmit {
+                        addNewItem()
+                    }
 
                     Button("Add") {
 
@@ -341,6 +348,12 @@ private extension ListDetailView {
                 Button {
 
                     isAddingItem = true
+
+                    // The field does not exist until isAddingItem flips, so
+                    // focus has to wait for the next runloop pass.
+                    DispatchQueue.main.async {
+                        isNewItemFocused = true
+                    }
 
                 } label: {
 
@@ -410,6 +423,7 @@ private extension ListDetailView {
 
         newItemText = ""
         isAddingItem = false
+        isNewItemFocused = false
     }
 }
 

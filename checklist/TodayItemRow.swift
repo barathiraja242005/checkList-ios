@@ -15,9 +15,6 @@ struct TodayItemRow: View {
     @State private var showingRemoveSheet = false
     @State private var showingDeleteConfirmation = false
 
-    @State private var isEditing = false
-
-    @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
 
@@ -26,11 +23,7 @@ struct TodayItemRow: View {
                 rowContent
             },
             onEdit: {
-                isEditing = true
-
-                DispatchQueue.main.async {
-                    isTextFieldFocused = true
-                }
+                navigateToDetail = true
             },
             onDelete: {
                 handleDelete()
@@ -116,44 +109,28 @@ struct TodayItemRow: View {
 
             // MARK: - Item Name
 
-            if isEditing {
-
-                TextField(
-                    "Item name",
-                    text: $item.text
-                )
-                .font(.system(size: 18))
-                .focused($isTextFieldFocused)
-                .submitLabel(.done)
-                .onSubmit {
-                    finishEditing()
-                }
-
-            } else {
-
-                Button {
-                    navigateToDetail = true
-                } label: {
-                    Text(item.text)
-                        .font(
-                            .system(size: 18)
-                        )
-                        .foregroundStyle(
-                            item.checked
-                                ? Color.secondary
-                                : Color.primary
-                        )
-                        .strikethrough(
-                            item.checked,
-                            color: .secondary
-                        )
-                        .frame(
-                            maxWidth: .infinity,
-                            alignment: .leading
-                        )
-                }
-                .buttonStyle(.plain)
+            Button {
+                navigateToDetail = true
+            } label: {
+                Text(item.text)
+                    .font(
+                        .system(size: 18)
+                    )
+                    .foregroundStyle(
+                        item.checked
+                            ? Color.secondary
+                            : Color.primary
+                    )
+                    .strikethrough(
+                        item.checked,
+                        color: .secondary
+                    )
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
             }
+            .buttonStyle(.plain)
 
             // MARK: - Time
 
@@ -172,25 +149,10 @@ struct TodayItemRow: View {
             }
         }
         .padding(.leading, 2)
+        // Vertical padding stays inside the 58pt minimum for a single-line
+        // title, so only wrapped titles actually grow the row.
+        .padding(.vertical, 12)
         .frame(minHeight: 58)
-    }
-
-    // MARK: - Finish Editing
-
-    private func finishEditing() {
-
-        let trimmed = item.text.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-
-        if !trimmed.isEmpty {
-            item.text = trimmed
-        }
-
-        isEditing = false
-        isTextFieldFocused = false
-
-        saveChanges()
     }
 
     // MARK: - Delete Handling

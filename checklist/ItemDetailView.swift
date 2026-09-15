@@ -17,6 +17,16 @@ struct ItemDetailView: View {
     @State private var showingTimePicker = false
     @State private var selectedTime = Date()
     @State private var showingRemoveSheet = false
+    @State private var showingDeleteConfirmation = false
+
+    // Kept so an emptied name can be restored rather than saved blank.
+    @State private var nameBeforeEditing = ""
+
+    // onDisappear commits the name, which must not run against an item the
+    // removal flow has already deleted.
+    @State private var isRemoving = false
+
+    @FocusState private var isNameFocused: Bool
 
     var body: some View {
 
@@ -35,7 +45,14 @@ struct ItemDetailView: View {
         .navigationBarBackButtonHidden(true)
         .backSwipe()
         .onAppear {
+
             selectedTime = item.remindAt ?? Date()
+            nameBeforeEditing = item.text
+
+            isNameFocused = true
+        }
+        .onDisappear {
+            commitName()
         }
         .sheet(
             isPresented: $showingTimePicker
@@ -92,8 +109,23 @@ struct ItemDetailView: View {
             isPresented: $showingRemoveSheet
         ) {
             removeItemSheet
-                .presentationDetents([.height(250)])
-                .presentationDragIndicator(.hidden)
+                // 290 to fit the redesigned sheet's card layout.
+                .presentationDetents([.height(290)])
+                .presentationDragIndicator(.visible)
+        }
+        .alert(
+            "Delete \(item.text)?",
+            isPresented: $showingDeleteConfirmation
+        ) {
+            Button("Delete", role: .destructive) {
+                deleteOneTimeItem()
+            }
+
+            Button("Cancel", role: .cancel) {
+                showingDeleteConfirmation = false
+            }
+        } message: {
+            Text("This item will be permanently deleted.")
         }
     }
 }
@@ -150,16 +182,26 @@ private extension ItemDetailView {
             spacing: 0
         ) {
 
-            Text(item.text)
-                .font(
-                    .system(
-                        size: 29,
-                        weight: .bold
-                    )
+            TextField(
+                "Item name",
+                text: $item.text,
+                axis: .vertical
+            )
+            .font(
+                .system(
+                    size: 29,
+                    weight: .bold
                 )
-                .foregroundStyle(.primary)
-                .padding(.top, 12)
-                .padding(.bottom, 28)
+            )
+            .foregroundStyle(.primary)
+            .textFieldStyle(.plain)
+            .focused($isNameFocused)
+            .submitLabel(.done)
+            .onSubmit {
+                commitName()
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 28)
 
             timeRow
             everyDayRow
@@ -314,7 +356,13 @@ private extension ItemDetailView {
 
         Button {
 
-            showingRemoveSheet = true
+            // "Just today" vs "future days" is only a real choice for a
+            // repeating item; a one-off just needs confirming.
+            if item.repeatsDaily {
+                showingRemoveSheet = true
+            } else {
+                showingDeleteConfirmation = true
+            }
 
         } label: {
 
@@ -353,11 +401,32 @@ private extension ItemDetailView {
     }
 }
 
+// MARK: - One-Time Item
+
+private extension ItemDetailView {
+
+    func deleteOneTimeItem() {
+
+        isRemoving = true
+
+        TodayItemRemoval.removeTodayAndFuture(
+            item,
+            occurrences: occurrences,
+            context: modelContext
+        )
+
+        showingDeleteConfirmation = false
+        dismiss()
+    }
+}
+
 // MARK: - Just Today
 
 private extension ItemDetailView {
 
     func removeJustToday() {
+
+        isRemoving = true
 
         TodayItemRemoval.removeJustToday(
             item,
@@ -374,6 +443,8 @@ private extension ItemDetailView {
 private extension ItemDetailView {
 
     func removeTodayAndFuture() {
+
+        isRemoving = true
 
         TodayItemRemoval.removeTodayAndFuture(
             item,
@@ -496,6 +567,34 @@ private extension ItemDetailView {
                 }
             }
         )
+    }
+}
+
+// MARK: - Name
+
+private extension ItemDetailView {
+
+    func commitName() {
+
+        guard !isRemoving
+        else {
+            return
+        }
+
+        let trimmed = item.text.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        // A blank name would leave an unidentifiable row, so fall back to
+        // whatever it was called before editing started.
+        item.text =
+            trimmed.isEmpty
+            ? nameBeforeEditing
+            : trimmed
+
+        isNameFocused = false
+
+        saveChanges()
     }
 }
 

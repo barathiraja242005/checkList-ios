@@ -463,14 +463,6 @@ private extension TodayDatedView {
                     )
                 }
 
-                // MARK: Overdue
-
-                if isToday &&
-                    !overdueChecklistItems.isEmpty {
-
-                    overdueSection
-                }
-
                 // MARK: Add Item
 
                 addItemSection
@@ -635,169 +627,6 @@ private extension TodayDatedView {
     }
 }
 
-// MARK: - Overdue
-
-private extension TodayDatedView {
-
-    var overdueChecklistItems:
-        [ChecklistListItem] {
-
-        let today = Self.today
-
-        return checklistItems
-            .filter { item in
-
-                guard
-                    let scheduledDate =
-                        item.scheduledDate
-                else {
-                    return false
-                }
-
-                return scheduledDate < today &&
-                    !item.checked
-            }
-            .sorted { first, second in
-
-                guard
-                    let firstDate =
-                        first.scheduledDate,
-                    let secondDate =
-                        second.scheduledDate
-                else {
-                    return false
-                }
-
-                return firstDate < secondDate
-            }
-    }
-
-    var overdueSection: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 0
-        ) {
-
-            Text("Overdue")
-                .font(
-                    .system(
-                        size: 18,
-                        weight: .semibold
-                    )
-                )
-                .foregroundStyle(.primary)
-                .padding(.top, 24)
-                .padding(.bottom, 8)
-
-            ForEach(
-                overdueChecklistItems
-            ) { item in
-
-                overdueChecklistItemRow(
-                    item
-                )
-            }
-        }
-    }
-
-    func overdueChecklistItemRow(
-        _ item: ChecklistListItem
-    ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 8
-        ) {
-
-            HStack(
-                spacing: 12
-            ) {
-
-                RoundedRectangle(
-                    cornerRadius: 5,
-                    style: .continuous
-                )
-                .stroke(
-                    Color(.systemGray3),
-                    lineWidth: 1.5
-                )
-                .frame(
-                    width: 22,
-                    height: 22
-                )
-
-                Text(item.text)
-                    .font(
-                        .system(size: 16)
-                    )
-                    .foregroundStyle(.primary)
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-            }
-
-            HStack {
-
-                if let scheduledDate =
-                    item.scheduledDate {
-
-                    Text(
-                        "Due " +
-                        scheduledDate.formatted(
-                            .dateTime
-                                .month(.abbreviated)
-                                .day()
-                                .year()
-                        )
-                    )
-                    .font(
-                        .system(size: 12)
-                    )
-                    .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                NavigationLink {
-
-                    ChecklistListItemDetailView(
-                        item: item
-                    )
-
-                } label: {
-
-                    Text("Reschedule")
-                        .font(
-                            .system(
-                                size: 15,
-                                weight: .semibold
-                            )
-                        )
-                        .foregroundStyle(
-                            Color(
-                                red: 0.20,
-                                green: 0.48,
-                                blue: 0.37
-                            )
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.leading, 34)
-        }
-        .padding(.vertical, 10)
-        .overlay(
-            Rectangle()
-                .fill(
-                    Color(.systemGray5)
-                )
-                .frame(height: 1),
-            alignment: .bottom
-        )
-    }
-}
 
 // MARK: - Add Item
 
@@ -1037,21 +866,33 @@ private extension TodayDatedView {
 
         let calendar = Calendar.current
 
-        if occurrenceForSelectedDate != nil {
-            return
-        }
+        let occurrence: Occurrence
 
-        let newOccurrence =
-            Occurrence(
+        if let existing = occurrenceForSelectedDate {
+
+            occurrence = existing
+
+        } else {
+
+            occurrence = Occurrence(
                 periodDate:
                     calendar.startOfDay(
                         for: selectedDate
                     )
             )
 
-        modelContext.insert(
-            newOccurrence
-        )
+            modelContext.insert(occurrence)
+        }
+
+        // Future dates get a preview of the repeating routine. Past dates are
+        // left alone so they keep the record DailyRollover captured rather
+        // than having today's routine projected backwards onto them.
+        if isFutureDate {
+
+            populateRepeatingItems(
+                into: occurrence
+            )
+        }
 
         do {
 
@@ -1063,6 +904,78 @@ private extension TodayDatedView {
                 "Failed to create occurrence: \(error)"
             )
         }
+    }
+
+    func populateRepeatingItems(
+        into occurrence: Occurrence
+    ) {
+
+        let recurringItems =
+            todayItems
+                .filter { $0.repeatsDaily }
+                .sorted { $0.position < $1.position }
+
+        for todayItem in recurringItems {
+
+            let alreadyExists =
+                occurrence.items.contains {
+                    $0.sourceItemID == todayItem.id
+                }
+
+            if alreadyExists {
+                continue
+            }
+
+            let nextPosition =
+                (
+                    occurrence.items
+                        .map { $0.position }
+                        .max() ?? -1
+                ) + 1
+
+            let occurrenceItem = OccurrenceItem(
+                sourceItemID: todayItem.id,
+                text: todayItem.text,
+
+                remindAt: copyTime(
+                    from: todayItem.remindAt,
+                    to: selectedDate
+                ),
+
+                position: nextPosition,
+                checked: false,
+                checkedAt: nil,
+                occurrence: occurrence
+            )
+
+            occurrence.items.append(occurrenceItem)
+        }
+    }
+
+    func copyTime(
+        from sourceDate: Date?,
+        to targetDate: Date
+    ) -> Date? {
+
+        guard let sourceDate
+        else {
+            return nil
+        }
+
+        let calendar = Calendar.current
+
+        return calendar.date(
+            bySettingHour: calendar.component(
+                .hour,
+                from: sourceDate
+            ),
+            minute: calendar.component(
+                .minute,
+                from: sourceDate
+            ),
+            second: 0,
+            of: targetDate
+        )
     }
 }
 

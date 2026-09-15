@@ -98,6 +98,12 @@ struct ContentView: View {
             }
             .background(Color.white)
 
+            // Leaving the screen abandons a half-started item, so the
+            // composer is not still sitting open on the way back.
+            .onDisappear {
+                cancelAddItem()
+            }
+
             // MARK: - Navigation Destinations
 
             .navigationDestination(
@@ -365,6 +371,14 @@ private extension ContentView {
                 .foregroundStyle(
                     .secondary
                 )
+                // Long weekday and month names plus a two-digit count can
+                // wrap, so keep it on one line and shrink to fit instead.
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
             }
         }
         .buttonStyle(.plain)
@@ -389,7 +403,7 @@ private extension ContentView {
                 TodayItemRow(
                     item: item
                 )
-                .frame(height: 59)
+                .frame(minHeight: 59)
                 .overlay(
                     Rectangle()
                         .fill(
@@ -409,11 +423,6 @@ private extension ContentView {
                 )
             }
 
-            if !overdueChecklistItems.isEmpty {
-
-                overdueSection
-            }
-
             if isAddingItem {
 
                 addItemComposer
@@ -421,6 +430,11 @@ private extension ContentView {
             } else {
 
                 addItemRow
+            }
+
+            if !overdueChecklistItems.isEmpty {
+
+                overdueSection
             }
         }
     }
@@ -506,23 +520,41 @@ private extension ContentView {
 
             } label: {
 
-                Text(item.text)
-                    .font(
-                        .system(size: 18)
-                    )
-                    .foregroundStyle(
-                        item.checked
-                            ? Color.secondary
-                            : Color.primary
-                    )
-                    .strikethrough(
-                        item.checked,
-                        color: .secondary
-                    )
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
+                VStack(
+                    alignment: .leading,
+                    spacing: 2
+                ) {
+
+                    Text(item.text)
+                        .font(
+                            .system(size: 18)
+                        )
+                        .foregroundStyle(
+                            item.checked
+                                ? Color.secondary
+                                : Color.primary
+                        )
+                        .strikethrough(
+                            item.checked,
+                            color: .secondary
+                        )
+
+                    // Says where the item came from, since these sit
+                    // alongside Today's own items.
+                    if let listTitle = item.list?.title {
+
+                        Text(listTitle)
+                            .font(
+                                .system(size: 12)
+                            )
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
             }
             .buttonStyle(.plain)
 
@@ -547,6 +579,7 @@ private extension ContentView {
             }
         }
         .padding(.leading, 2)
+        .padding(.vertical, 12)
         .frame(minHeight: 59)
         .overlay(
             Rectangle()
@@ -563,6 +596,17 @@ private extension ContentView {
 
 private extension ContentView {
 
+    // Amber rather than red: overdue is a nudge, and red already means
+    // delete elsewhere in the app.
+    var overdueAccent: Color {
+
+        Color(
+            red: 0.72,
+            green: 0.44,
+            blue: 0.05
+        )
+    }
+
     var overdueSection: some View {
 
         VStack(
@@ -570,130 +614,37 @@ private extension ContentView {
             spacing: 0
         ) {
 
-            Text("Overdue")
-                .font(
-                    .system(
-                        size: 17,
-                        weight: .semibold
+            HStack(spacing: 6) {
+
+                Image(
+                    systemName: "exclamationmark.triangle.fill"
+                )
+                .font(.system(size: 13))
+
+                Text("Overdue")
+                    .font(
+                        .system(
+                            size: 17,
+                            weight: .semibold
+                        )
                     )
-                )
-                .foregroundStyle(
-                    .secondary
-                )
-                .padding(.top, 24)
-                .padding(.bottom, 10)
+            }
+            .foregroundStyle(overdueAccent)
+            .padding(.top, 24)
+            .padding(.bottom, 10)
 
             ForEach(
                 overdueChecklistItems
             ) { item in
 
-                overdueChecklistItemRow(
-                    item
+                OverdueItemRow(
+                    item: item,
+                    accent: overdueAccent
                 )
             }
         }
     }
 
-    func overdueChecklistItemRow(
-        _ item: ChecklistListItem
-    ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 6
-        ) {
-
-            HStack(
-                spacing: 16
-            ) {
-
-                RoundedRectangle(
-                    cornerRadius: 5,
-                    style: .continuous
-                )
-                .stroke(
-                    Color(.systemGray3),
-                    lineWidth: 1.5
-                )
-                .frame(
-                    width: 22,
-                    height: 22
-                )
-
-                Text(item.text)
-                    .font(
-                        .system(size: 18)
-                    )
-                    .foregroundStyle(
-                        .primary
-                    )
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-            }
-
-            HStack {
-
-                if let scheduledDate =
-                    item.scheduledDate {
-
-                    Text(
-                        "Due " +
-                        scheduledDate.formatted(
-                            .dateTime
-                                .day()
-                                .month(.abbreviated)
-                                .year()
-                        )
-                    )
-                    .font(
-                        .system(size: 13)
-                    )
-                    .foregroundStyle(
-                        .secondary
-                    )
-                }
-
-                Spacer()
-
-                NavigationLink {
-
-                    ChecklistListItemDetailView(
-                        item: item
-                    )
-
-                } label: {
-
-                    Text("Reschedule")
-                        .font(
-                            .system(
-                                size: 15,
-                                weight: .semibold
-                            )
-                        )
-                        .foregroundStyle(
-                            Color(
-                                red: 0.25,
-                                green: 0.48,
-                                blue: 0.39
-                            )
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.leading, 38)
-        }
-        .padding(.vertical, 11)
-        .overlay(
-            Rectangle()
-                .fill(
-                    Color(.systemGray5)
-                )
-                .frame(height: 1),
-            alignment: .bottom
-        )
-    }
 }
 
 // MARK: - Reordering
@@ -950,6 +901,21 @@ private extension ContentView {
 // MARK: - Add Today Item
 
 private extension ContentView {
+
+    func cancelAddItem() {
+
+        guard isAddingItem
+        else {
+            return
+        }
+
+        isNewItemFieldFocused = false
+        isAddingItem = false
+        newItemText = ""
+        repeatEveryDay = false
+        selectedTime = Self.defaultTime
+        hasSelectedTime = false
+    }
 
     func addItem() {
 
