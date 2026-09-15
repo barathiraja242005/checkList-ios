@@ -124,15 +124,12 @@ struct TodayDatedView: View {
                     newItemText.isEmpty
                     ? "New item"
                     : newItemText,
-
                 selectedTime:
                     $selectedTime,
-
                 onClear: {
                     hasSelectedTime = false
                     selectedTime = Self.defaultTime
                 },
-
                 onDone: {
                     hasSelectedTime = true
                     addItem()
@@ -287,7 +284,6 @@ private extension TodayDatedView {
             Calendar.current
 
         return (-365...30).compactMap {
-
             offset in
 
             calendar.date(
@@ -413,11 +409,35 @@ private extension TodayDatedView {
         .padding(.vertical, 17)
     }
 
+    // Items that should actually appear on today's list.
+    //
+    // A recurring item skipped for today is hidden,
+    // but it remains available again on future days.
+
+    var visibleTodayItems: [TodayItem] {
+
+        let calendar = Calendar.current
+        let today = Self.today
+
+        return todayItems.filter { item in
+
+            guard let skippedDate = item.skippedDate
+            else {
+                return true
+            }
+
+            return !calendar.isDate(
+                skippedDate,
+                inSameDayAs: today
+            )
+        }
+    }
+
     var completedCount: Int {
 
         if isToday {
 
-            return todayItems.filter {
+            return visibleTodayItems.filter {
                 $0.checked
             }.count
         }
@@ -431,7 +451,7 @@ private extension TodayDatedView {
 
         if isToday {
 
-            return todayItems.count
+            return visibleTodayItems.count
         }
 
         return selectedOccurrenceItems.count
@@ -448,7 +468,6 @@ private extension TodayDatedView {
             Calendar.current
 
         return occurrences.first {
-
             occurrence in
 
             calendar.isDate(
@@ -535,7 +554,6 @@ private extension TodayDatedView {
 
             let alreadyExists =
                 occurrence.items.contains {
-
                     occurrenceItem in
 
                     occurrenceItem.sourceItemID ==
@@ -559,10 +577,8 @@ private extension TodayDatedView {
                 OccurrenceItem(
                     sourceItemID:
                         todayItem.id,
-
                     text:
                         todayItem.text,
-
                     remindAt:
                         copyTime(
                             from:
@@ -570,14 +586,10 @@ private extension TodayDatedView {
                             to:
                                 selectedDate
                         ),
-
                     position:
                         nextPosition,
-
                     checked: false,
-
                     checkedAt: nil,
-
                     occurrence:
                         occurrence
                 )
@@ -653,25 +665,42 @@ private extension TodayDatedView {
                     List {
 
                         ForEach(
-                            todayItems
+                            visibleTodayItems
                         ) { item in
 
                             TodayItemRow(
                                 item: item
                             )
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparatorTint(Color(.systemGray5))
-                            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                            .alignmentGuide(.listRowSeparatorTrailing) { $0.width }
-                            .listRowBackground(Color.clear)
+                            .listRowInsets(
+                                EdgeInsets()
+                            )
+                            .listRowSeparatorTint(
+                                Color(.systemGray5)
+                            )
+                            .alignmentGuide(
+                                .listRowSeparatorLeading
+                            ) { _ in
+                                0
+                            }
+                            .alignmentGuide(
+                                .listRowSeparatorTrailing
+                            ) { $0.width }
+                            .listRowBackground(
+                                Color.clear
+                            )
                         }
-                        .onMove(perform: moveItems)
+                        .onMove(
+                            perform: moveItems
+                        )
                     }
                     .listStyle(.plain)
                     .scrollDisabled(true)
                     .scrollContentBackground(.hidden)
                     .frame(
-                        height: CGFloat(todayItems.count) * 59
+                        height:
+                            CGFloat(
+                                visibleTodayItems.count
+                            ) * 59
                     )
 
                 } else {
@@ -990,14 +1019,11 @@ private extension TodayDatedView {
         let newItem =
             TodayItem(
                 text: trimmedText,
-
                 remindAt:
                     hasSelectedTime
                     ? selectedTime
                     : nil,
-
                 checked: false,
-
                 repeatsDaily:
                     repeatEveryDay
             )
@@ -1065,6 +1091,7 @@ private extension TodayDatedView {
         )
 
         for (index, item) in reordered.enumerated() {
+
             item.position = index
         }
 

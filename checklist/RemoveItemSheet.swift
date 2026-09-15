@@ -3,7 +3,6 @@ import SwiftUI
 struct RemoveItemSheet: View {
 
     let itemText: String
-
     let onJustToday: () -> Void
     let onTodayAndFuture: () -> Void
     let onCancel: () -> Void
@@ -12,39 +11,27 @@ struct RemoveItemSheet: View {
 
         VStack(
             alignment: .leading,
-            spacing: 0
+            spacing: 12
         ) {
 
-            Capsule()
-                .fill(Color(.systemGray4))
-                .frame(width: 42, height: 5)
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .center
-                )
-                .padding(.top, 12)
-                .padding(.bottom, 18)
+            // MARK: - Title
 
             Text("Remove \(itemText)")
                 .font(
                     .system(
-                        size: 21,
-                        weight: .bold
+                        size: 20,
+                        weight: .semibold
                     )
                 )
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
 
-            Text(
-                "Earlier days keep their record either way."
-            )
-            .font(.system(size: 15))
-            .foregroundStyle(.secondary)
-            .padding(.top, 4)
-            .padding(.bottom, 20)
+            // MARK: - Just Today
 
             Button {
-
                 onJustToday()
-
             } label: {
 
                 VStack(
@@ -53,33 +40,42 @@ struct RemoveItemSheet: View {
                 ) {
 
                     Text("Just today")
-                        .font(.system(size: 17))
-                        .foregroundStyle(.primary)
+                        .font(
+                            .system(size: 16, weight: .bold)
+                        )
+                        .foregroundStyle(
+                            .primary
+                        )
 
                     Text(
-                        "Stays on your list from tomorrow. Use this when you're skipping a day."
+                        "Stays on your list from tomorrow."
                     )
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
+                    .font(
+                        .system(size: 12)
+                    )
+                    .foregroundStyle(
+                        .secondary
                     )
                 }
                 .frame(
                     maxWidth: .infinity,
                     alignment: .leading
                 )
-                .padding(.vertical, 13)
+                .padding(
+                    .horizontal,
+                    14
+                )
+                .padding(
+                    .vertical,
+                    8
+                )
             }
             .buttonStyle(.plain)
 
-            Divider()
+            // MARK: - Today and Future
 
             Button {
-
                 onTodayAndFuture()
-
             } label: {
 
                 VStack(
@@ -88,48 +84,77 @@ struct RemoveItemSheet: View {
                 ) {
 
                     Text("Today and future days")
-                        .font(.system(size: 17))
-                        .foregroundStyle(.primary)
+                        .font(
+                            .system(size: 16, weight: .bold)
+                        )
+                        .foregroundStyle(
+                            .primary
+                        )
 
                     Text(
                         "Removes it from your routine for good."
                     )
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
+                    .font(
+                        .system(size: 12
+                        )
+                    )
+                    .foregroundStyle(
+                        .secondary
+                    )
                 }
                 .frame(
                     maxWidth: .infinity,
                     alignment: .leading
                 )
-                .padding(.vertical, 13)
+                .padding(
+                    .horizontal,
+                    14
+                )
+                .padding(
+                    .vertical,
+                    8
+                )
             }
             .buttonStyle(.plain)
 
-            Spacer()
+            // MARK: - Cancel
 
             Button {
-
                 onCancel()
-
             } label: {
 
                 Text("Cancel")
-                    .font(.system(size: 17))
-                    .foregroundStyle(.secondary)
-                    .frame(
-                        maxWidth: .infinity
+                    .font(
+                        .system(size: 16)
                     )
-                    .padding(.vertical, 12)
+                    .foregroundStyle(
+                        .secondary
+                    )
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .center
+                    )
+                    .padding(
+                        .vertical,
+                        6
+                    )
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 26)
-        .padding(.bottom, 10)
-        .background(Color.white)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .padding(
+            .horizontal,
+            24
+        )
+        .padding(
+            .vertical,
+            12
+        )
     }
 }
-
-// MARK: - Preview
 
 #Preview {
 

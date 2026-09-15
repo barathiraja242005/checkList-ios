@@ -5,9 +5,11 @@ struct TodayItemRow: View {
 
     @Bindable var item: TodayItem
 
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.modelContext)
+    private var modelContext
 
-    @Query private var occurrences: [Occurrence]
+    @Query
+    private var occurrences: [Occurrence]
 
     @State private var navigateToDetail = false
     @State private var showingRemoveSheet = false
@@ -15,7 +17,9 @@ struct TodayItemRow: View {
     var body: some View {
 
         SwipeActionRow(
-            content: { rowContent },
+            content: {
+                rowContent
+            },
             onEdit: {
                 navigateToDetail = true
             },
@@ -23,47 +27,52 @@ struct TodayItemRow: View {
                 showingRemoveSheet = true
             }
         )
-            .navigationDestination(
-                isPresented: $navigateToDetail
-            ) {
+        .navigationDestination(
+            isPresented: $navigateToDetail
+        ) {
+            ItemDetailView(
+                item: item
+            )
+        }
 
-                ItemDetailView(
-                    item: item
-                )
-            }
-            .sheet(
-                isPresented: $showingRemoveSheet
-            ) {
-
-                RemoveItemSheet(
-                    itemText: item.text,
-                    onJustToday: {
-
-                        TodayItemRemoval.removeJustToday(
-                            item,
-                            context: modelContext
-                        )
-
-                        showingRemoveSheet = false
-                    },
-                    onTodayAndFuture: {
-
-                        TodayItemRemoval.removeTodayAndFuture(
-                            item,
-                            occurrences: occurrences,
-                            context: modelContext
-                        )
-
-                        showingRemoveSheet = false
-                    },
-                    onCancel: {
-                        showingRemoveSheet = false
-                    }
-                )
-                .presentationDetents([.height(390)])
-                .presentationDragIndicator(.hidden)
-            }
+        // MARK: - Remove Sheet
+        //
+        // Temporarily commented out while we rebuild
+        // the remove bottom sheet step by step.
+        //
+        // .sheet(
+        //     isPresented: $showingRemoveSheet
+        // ) {
+        //     RemoveItemSheet(
+        //         itemText: item.text,
+        //         onJustToday: {
+        //             TodayItemRemoval.removeJustToday(
+        //                 item,
+        //                 context: modelContext
+        //             )
+        //
+        //             showingRemoveSheet = false
+        //         },
+        //         onTodayAndFuture: {
+        //             TodayItemRemoval.removeTodayAndFuture(
+        //                 item,
+        //                 occurrences: occurrences,
+        //                 context: modelContext
+        //             )
+        //
+        //             showingRemoveSheet = false
+        //         },
+        //         onCancel: {
+        //             showingRemoveSheet = false
+        //         }
+        //     )
+        //     .presentationSizing(.fitted)
+        //     .presentationDragIndicator(.visible)
+        //     .presentationBackground(Color.white)
+        // }
     }
+
+    // MARK: - Row Content
 
     private var rowContent: some View {
 
@@ -72,11 +81,8 @@ struct TodayItemRow: View {
             // MARK: - Checkbox
 
             Button {
-
                 item.checked.toggle()
-
             } label: {
-
                 CheckmarkBox(
                     isChecked: item.checked
                 )
@@ -86,11 +92,8 @@ struct TodayItemRow: View {
             // MARK: - Item Name
 
             Button {
-
                 navigateToDetail = true
-
             } label: {
-
                 Text(item.text)
                     .font(.system(size: 18))
                     .foregroundStyle(

@@ -91,7 +91,7 @@ struct ItemDetailView: View {
             isPresented: $showingRemoveSheet
         ) {
             removeItemSheet
-                .presentationDetents([.height(390)])
+                .presentationDetents([.height(250)])
                 .presentationDragIndicator(.hidden)
         }
     }
@@ -305,7 +305,7 @@ private extension ItemDetailView {
     }
 }
 
-// MARK: - Remove Item
+// MARK: - cItem
 
 private extension ItemDetailView {
 
