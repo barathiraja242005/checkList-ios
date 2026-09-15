@@ -25,6 +25,8 @@ struct ChecklistListItemDetailView: View {
         }
         .background(Color.white)
         .navigationBarBackButtonHidden(true)
+        .backSwipe()
+        
         .onAppear {
             selectedTime =
                 item.scheduledDate ?? Date()

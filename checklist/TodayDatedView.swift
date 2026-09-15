@@ -99,6 +99,7 @@ struct TodayDatedView: View {
         }
         .background(Color.white)
         .navigationBarBackButtonHidden(true)
+        .backSwipe()
 
         .onAppear {
             ensureOccurrenceForSelectedDate()

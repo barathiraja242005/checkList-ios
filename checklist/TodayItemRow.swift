@@ -15,6 +15,10 @@ struct TodayItemRow: View {
     @State private var showingRemoveSheet = false
     @State private var showingDeleteConfirmation = false
 
+    @State private var isEditing = false
+
+    @FocusState private var isTextFieldFocused: Bool
+
     var body: some View {
 
         SwipeActionRow(
@@ -22,7 +26,11 @@ struct TodayItemRow: View {
                 rowContent
             },
             onEdit: {
-                navigateToDetail = true
+                isEditing = true
+
+                DispatchQueue.main.async {
+                    isTextFieldFocused = true
+                }
             },
             onDelete: {
                 handleDelete()
@@ -100,6 +108,7 @@ struct TodayItemRow: View {
 
             Button {
                 item.checked.toggle()
+                saveChanges()
             } label: {
                 CheckmarkBox(
                     isChecked: item.checked
@@ -109,28 +118,44 @@ struct TodayItemRow: View {
 
             // MARK: - Item Name
 
-            Button {
-                navigateToDetail = true
-            } label: {
-                Text(item.text)
-                    .font(
-                        .system(size: 18)
-                    )
-                    .foregroundStyle(
-                        item.checked
-                            ? Color.secondary
-                            : Color.primary
-                    )
-                    .strikethrough(
-                        item.checked,
-                        color: .secondary
-                    )
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
+            if isEditing {
+
+                TextField(
+                    "Item name",
+                    text: $item.text
+                )
+                .font(.system(size: 18))
+                .focused($isTextFieldFocused)
+                .submitLabel(.done)
+                .onSubmit {
+                    finishEditing()
+                }
+
+            } else {
+
+                Button {
+                    navigateToDetail = true
+                } label: {
+                    Text(item.text)
+                        .font(
+                            .system(size: 18)
+                        )
+                        .foregroundStyle(
+                            item.checked
+                                ? Color.secondary
+                                : Color.primary
+                        )
+                        .strikethrough(
+                            item.checked,
+                            color: .secondary
+                        )
+                        .frame(
+                            maxWidth: .infinity,
+                            alignment: .leading
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             // MARK: - Time
 
@@ -145,13 +170,29 @@ struct TodayItemRow: View {
                 .font(
                     .system(size: 16)
                 )
-                .foregroundStyle(
-                    .secondary
-                )
+                .foregroundStyle(.secondary)
             }
         }
         .padding(.leading, 2)
         .frame(minHeight: 58)
+    }
+
+    // MARK: - Finish Editing
+
+    private func finishEditing() {
+
+        let trimmed = item.text.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        if !trimmed.isEmpty {
+            item.text = trimmed
+        }
+
+        isEditing = false
+        isTextFieldFocused = false
+
+        saveChanges()
     }
 
     // MARK: - Delete Handling
@@ -160,16 +201,9 @@ struct TodayItemRow: View {
 
         if item.repeatsDaily {
 
-            // Daily item:
-            // Ask whether to remove just today
-            // or today and all future days.
-
             showingRemoveSheet = true
 
         } else {
-
-            // One-time item:
-            // Ask for simple delete confirmation.
 
             showingDeleteConfirmation = true
         }
@@ -192,6 +226,19 @@ struct TodayItemRow: View {
         } catch {
             print(
                 "Failed to delete one-time item: \(error)"
+            )
+        }
+    }
+
+    // MARK: - Save
+
+    private func saveChanges() {
+
+        do {
+            try modelContext.save()
+        } catch {
+            print(
+                "Failed to save Today item change: \(error)"
             )
         }
     }

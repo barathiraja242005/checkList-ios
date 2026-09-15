@@ -95,6 +95,7 @@ struct ListDetailView: View {
         }
         .background(Color.white)
         .navigationBarBackButtonHidden(true)
+        .backSwipe()
 
         /*
         .sheet(
