@@ -6,7 +6,11 @@ struct checklistApp: App {
 
     let container: ModelContainer
 
+    @Environment(\.scenePhase) private var scenePhase
+
     init() {
+
+        NotificationManager.configure()
 
         do {
 
@@ -32,6 +36,18 @@ struct checklistApp: App {
                 )
             }
 
+            DailyRollover.performIfNeeded(
+                context: context
+            )
+
+            TodayItemOrdering.applyInitialSortIfNeeded(
+                context: context
+            )
+
+            ChecklistListItemOrdering.applyInitialPositionsIfNeeded(
+                context: context
+            )
+
         } catch {
 
             fatalError(
@@ -47,6 +63,19 @@ struct checklistApp: App {
             ContentView()
         }
         .modelContainer(container)
+        .onChange(
+            of: scenePhase
+        ) { _, newPhase in
+
+            guard newPhase == .active
+            else {
+                return
+            }
+
+            DailyRollover.performIfNeeded(
+                context: container.mainContext
+            )
+        }
     }
 
     private func addSampleData(

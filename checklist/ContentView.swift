@@ -3,6 +3,8 @@ import SwiftData
 
 struct ContentView: View {
 
+    @Environment(\.modelContext) private var modelContext
+
     @Query(
         sort: [
             SortDescriptor(\TodayItem.position)
@@ -16,6 +18,27 @@ struct ContentView: View {
         ]
     )
     private var lists: [ChecklistList]
+
+    @State private var isAddingItem = false
+    @State private var newItemText = ""
+    @State private var repeatEveryDay = false
+
+    @State private var selectedTime: Date =
+        Self.defaultTime
+
+    @State private var hasSelectedTime = false
+    @State private var showingTimePicker = false
+
+    @FocusState private var isNewItemFieldFocused: Bool
+
+    private static var defaultTime: Date {
+        Calendar.current.date(
+            bySettingHour: 21,
+            minute: 30,
+            second: 0,
+            of: Date()
+        ) ?? Date()
+    }
 
     var body: some View {
 
@@ -45,6 +68,36 @@ struct ContentView: View {
                 floatingAddButton
             }
             .background(Color.white)
+        }
+        .sheet(
+            isPresented: $showingTimePicker
+        ) {
+
+            TimePickerView(
+                itemName:
+                    newItemText.isEmpty
+                    ? "New item"
+                    : newItemText,
+
+                selectedTime:
+                    $selectedTime,
+
+                onClear: {
+                    hasSelectedTime = false
+                    selectedTime = Self.defaultTime
+                },
+
+                onDone: {
+                    hasSelectedTime = true
+                    addItem()
+                }
+            )
+            .presentationDetents(
+                [.height(490)]
+            )
+            .presentationDragIndicator(
+                .hidden
+            )
         }
     }
 
@@ -144,14 +197,64 @@ struct ContentView: View {
             Spacer()
                 .frame(height: 38)
 
-            ForEach(visibleTodayItems) { item in
+            List {
 
-                TodayItemRow(
-                    item: item
-                )
+                ForEach(visibleTodayItems) { item in
+
+                    TodayItemRow(
+                        item: item
+                    )
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparatorTint(Color(.systemGray5))
+                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                    .alignmentGuide(.listRowSeparatorTrailing) { $0.width }
+                    .listRowBackground(Color.clear)
+                }
+                .onMove(perform: moveItems)
             }
+            .listStyle(.plain)
+            .scrollDisabled(true)
+            .scrollContentBackground(.hidden)
+            .frame(
+                height: CGFloat(visibleTodayItems.count) * 59
+            )
 
-            addItemRow
+            if isAddingItem {
+
+                addItemComposer
+
+            } else {
+
+                addItemRow
+            }
+        }
+    }
+
+    private func moveItems(
+        from source: IndexSet,
+        to destination: Int
+    ) {
+
+        var reordered = visibleTodayItems
+
+        reordered.move(
+            fromOffsets: source,
+            toOffset: destination
+        )
+
+        for (index, item) in reordered.enumerated() {
+            item.position = index
+        }
+
+        do {
+
+            try modelContext.save()
+
+        } catch {
+
+            print(
+                "Failed to reorder items: \(error)"
+            )
         }
     }
 
@@ -159,7 +262,12 @@ struct ContentView: View {
 
         Button {
 
-            // Add item functionality will be built later.
+            isAddingItem = true
+            newItemText = ""
+            repeatEveryDay = false
+            selectedTime = Self.defaultTime
+            hasSelectedTime = false
+            isNewItemFieldFocused = true
 
         } label: {
 
@@ -178,6 +286,220 @@ struct ContentView: View {
             .frame(height: 58)
         }
         .buttonStyle(.plain)
+    }
+
+    private var addItemComposer: some View {
+
+        VStack(spacing: 0) {
+
+            HStack(spacing: 18) {
+
+                Text("+")
+                    .font(.system(size: 21))
+                    .foregroundStyle(.secondary)
+
+                TextField(
+                    "Add item",
+                    text: $newItemText
+                )
+                .font(.system(size: 18))
+                .submitLabel(.done)
+                .focused($isNewItemFieldFocused)
+                .onSubmit {
+                    addItem()
+                }
+            }
+            .frame(height: 53)
+
+            HStack(spacing: 10) {
+
+                timeChip
+
+                repeatChip
+
+                Spacer()
+            }
+            .padding(.leading, 40)
+            .padding(.bottom, 14)
+        }
+        .overlay(
+            alignment: .top
+        ) {
+
+            Rectangle()
+                .fill(
+                    Color(.systemGray5)
+                )
+                .frame(height: 1)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+
+            Rectangle()
+                .fill(
+                    Color(.systemGray5)
+                )
+                .frame(height: 1)
+        }
+    }
+
+    private var timeChip: some View {
+
+        Button {
+
+            showingTimePicker = true
+
+        } label: {
+
+            Text(
+                hasSelectedTime
+                ? selectedTime.formatted(
+                    .dateTime
+                        .hour(
+                            .twoDigits(
+                                amPM: .omitted
+                            )
+                        )
+                        .minute(
+                            .twoDigits
+                        )
+                )
+                : "Set time"
+            )
+            .font(.system(size: 16))
+            .foregroundStyle(
+                hasSelectedTime
+                ? Color(
+                    red: 0.25,
+                    green: 0.48,
+                    blue: 0.39
+                )
+                : Color.secondary
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background {
+
+                Capsule()
+                    .fill(
+                        hasSelectedTime
+                        ? Color(
+                            red: 0.92,
+                            green: 0.96,
+                            blue: 0.94
+                        )
+                        : Color(.systemGray6)
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var repeatChip: some View {
+
+        Button {
+
+            repeatEveryDay.toggle()
+
+        } label: {
+
+            Text("Every day")
+                .font(.system(size: 16))
+                .foregroundStyle(
+                    repeatEveryDay
+                    ? Color(
+                        red: 0.25,
+                        green: 0.48,
+                        blue: 0.39
+                    )
+                    : Color.secondary
+                )
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background {
+
+                    Capsule()
+                        .fill(
+                            repeatEveryDay
+                            ? Color(
+                                red: 0.92,
+                                green: 0.96,
+                                blue: 0.94
+                            )
+                            : Color(.systemGray6)
+                        )
+                }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func addItem() {
+
+        let trimmedText =
+            newItemText.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !trimmedText.isEmpty
+        else {
+            isAddingItem = false
+            return
+        }
+
+        let newItem = TodayItem(
+            text: trimmedText,
+
+            remindAt:
+                hasSelectedTime
+                ? selectedTime
+                : nil,
+
+            checked: false,
+
+            repeatsDaily:
+                repeatEveryDay
+        )
+
+        modelContext.insert(newItem)
+
+        TodayItemOrdering.insertChronologically(
+            newItem,
+            into: todayItems
+        )
+
+        do {
+
+            try modelContext.save()
+
+        } catch {
+
+            print("Failed to save new item: \(error)")
+        }
+
+        if hasSelectedTime {
+
+            NotificationManager.requestAuthorization { granted in
+
+                newItem.reminderEnabled = granted
+
+                if granted {
+
+                    NotificationManager.scheduleReminder(
+                        for: newItem
+                    )
+                }
+
+                try? modelContext.save()
+            }
+        }
+
+        newItemText = ""
+        repeatEveryDay = false
+        selectedTime = Self.defaultTime
+        hasSelectedTime = false
+        isAddingItem = false
+        showingTimePicker = false
     }
 
     // MARK: - Lists

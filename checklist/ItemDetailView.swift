@@ -44,12 +44,44 @@ struct ItemDetailView: View {
                 itemName: item.text,
                 selectedTime: $selectedTime,
                 onClear: {
+
                     item.remindAt = nil
+                    item.reminderEnabled = false
+
+                    NotificationManager.cancelReminder(
+                        for: item
+                    )
+
                     saveChanges()
                 },
                 onDone: {
+
                     item.remindAt = selectedTime
-                    saveChanges()
+
+                    if item.reminderEnabled {
+
+                        NotificationManager.scheduleReminder(
+                            for: item
+                        )
+
+                        saveChanges()
+
+                    } else {
+
+                        NotificationManager.requestAuthorization { granted in
+
+                            item.reminderEnabled = granted
+
+                            if granted {
+
+                                NotificationManager.scheduleReminder(
+                                    for: item
+                                )
+                            }
+
+                            saveChanges()
+                        }
+                    }
                 }
             )
             .presentationDetents([.height(490)])
@@ -238,9 +270,19 @@ private extension ItemDetailView {
                         } else {
 
                             item.repeatsDaily = false
-                            removeFutureOccurrences()
+
+                            TodayItemRemoval.removeFutureOccurrences(
+                                for: item,
+                                occurrences: occurrences,
+                                context: modelContext
+                            )
+
                             saveChanges()
                         }
+
+                        NotificationManager.scheduleReminder(
+                            for: item
+                        )
                     }
                 )
             )
@@ -295,122 +337,18 @@ private extension ItemDetailView {
 
     var removeItemSheet: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 0
-        ) {
-
-            Capsule()
-                .fill(Color(.systemGray4))
-                .frame(width: 42, height: 5)
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .center
-                )
-                .padding(.top, 12)
-                .padding(.bottom, 18)
-
-            Text("Remove \(item.text)")
-                .font(
-                    .system(
-                        size: 21,
-                        weight: .bold
-                    )
-                )
-
-            Text(
-                "Earlier days keep their record either way."
-            )
-            .font(.system(size: 15))
-            .foregroundStyle(.secondary)
-            .padding(.top, 4)
-            .padding(.bottom, 20)
-
-            Button {
-
+        RemoveItemSheet(
+            itemText: item.text,
+            onJustToday: {
                 removeJustToday()
-
-            } label: {
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 4
-                ) {
-
-                    Text("Just today")
-                        .font(.system(size: 17))
-                        .foregroundStyle(.primary)
-
-                    Text(
-                        "Stays on your list from tomorrow. Use this when you're skipping a day."
-                    )
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
-                }
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .leading
-                )
-                .padding(.vertical, 13)
-            }
-            .buttonStyle(.plain)
-
-            Divider()
-
-            Button {
-
+            },
+            onTodayAndFuture: {
                 removeTodayAndFuture()
-
-            } label: {
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 4
-                ) {
-
-                    Text("Today and future days")
-                        .font(.system(size: 17))
-                        .foregroundStyle(.primary)
-
-                    Text(
-                        "Removes it from your routine for good."
-                    )
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                }
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .leading
-                )
-                .padding(.vertical, 13)
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            Button {
-
+            },
+            onCancel: {
                 showingRemoveSheet = false
-
-            } label: {
-
-                Text("Cancel")
-                    .font(.system(size: 17))
-                    .foregroundStyle(.secondary)
-                    .frame(
-                        maxWidth: .infinity
-                    )
-                    .padding(.vertical, 12)
             }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 26)
-        .padding(.bottom, 10)
-        .background(Color.white)
+        )
     }
 }
 
@@ -420,32 +358,10 @@ private extension ItemDetailView {
 
     func removeJustToday() {
 
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(
-            for: Date()
+        TodayItemRemoval.removeJustToday(
+            item,
+            context: modelContext
         )
-
-        if item.repeatsDaily {
-
-            item.skippedDate = today
-
-            saveChanges()
-
-        } else {
-
-            modelContext.delete(item)
-
-            do {
-
-                try modelContext.save()
-
-            } catch {
-
-                print(
-                    "Failed to remove item: \(error)"
-                )
-            }
-        }
 
         showingRemoveSheet = false
         dismiss()
@@ -458,78 +374,14 @@ private extension ItemDetailView {
 
     func removeTodayAndFuture() {
 
-        removeFutureOccurrences()
-
-        modelContext.delete(item)
-
-        do {
-
-            try modelContext.save()
-
-        } catch {
-
-            print(
-                "Failed to permanently remove item: \(error)"
-            )
-        }
+        TodayItemRemoval.removeTodayAndFuture(
+            item,
+            occurrences: occurrences,
+            context: modelContext
+        )
 
         showingRemoveSheet = false
         dismiss()
-    }
-}
-
-// MARK: - Remove Future Occurrences
-
-private extension ItemDetailView {
-
-    func removeFutureOccurrences() {
-
-        let calendar = Calendar.current
-
-        let today =
-            calendar.startOfDay(
-                for: Date()
-            )
-
-        for occurrence in occurrences {
-
-            let occurrenceDate =
-                calendar.startOfDay(
-                    for: occurrence.periodDate
-                )
-
-            guard occurrenceDate > today
-            else {
-                continue
-            }
-
-            let matchingItems =
-                occurrence.items.filter {
-                    occurrenceItem in
-
-                    occurrenceItem.sourceItemID == item.id
-                }
-
-            for occurrenceItem in matchingItems {
-
-                modelContext.delete(
-                    occurrenceItem
-                )
-            }
-
-            occurrence.items.removeAll {
-                occurrenceItem in
-
-                occurrenceItem.sourceItemID == item.id
-            }
-
-            if occurrence.items.isEmpty {
-
-                modelContext.delete(
-                    occurrence
-                )
-            }
-        }
     }
 }
 
@@ -546,7 +398,8 @@ private extension ItemDetailView {
                 spacing: 3
             ) {
 
-                if let remindAt = item.remindAt {
+                if item.reminderEnabled,
+                    let remindAt = item.remindAt {
 
                     Text(
                         "Remind me at "
@@ -557,22 +410,24 @@ private extension ItemDetailView {
                         )
                     )
                     .font(.system(size: 16))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
 
                 } else {
 
                     Text("Remind me")
                         .font(.system(size: 16))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.primary)
                 }
 
                 Text(
-                    "A notification, with a button to tick it off without opening the app."
+                    item.remindAt == nil
+                        ? "Set a time above to turn this on."
+                        : item.repeatsDaily
+                            ? "A notification every day at this time."
+                            : "A one-time notification at this time."
                 )
                 .font(.system(size: 12))
-                .foregroundStyle(
-                    Color.secondary.opacity(0.65)
-                )
+                .foregroundStyle(.secondary)
                 .fixedSize(
                     horizontal: false,
                     vertical: true
@@ -581,39 +436,64 @@ private extension ItemDetailView {
 
             Spacer()
 
-            Text("Plus")
-                .font(
-                    .system(
-                        size: 11,
-                        weight: .medium
-                    )
+            Toggle(
+                "",
+                isOn: reminderToggleBinding
+            )
+            .labelsHidden()
+            .tint(
+                Color(
+                    red: 0.20,
+                    green: 0.48,
+                    blue: 0.37
                 )
-                .foregroundStyle(
-                    Color(
-                        red: 0.20,
-                        green: 0.48,
-                        blue: 0.37
-                    )
-                )
-                .padding(.horizontal, 7)
-                .padding(.vertical, 4)
-                .background(
-                    Color(
-                        red: 0.20,
-                        green: 0.48,
-                        blue: 0.37
-                    )
-                    .opacity(0.08)
-                )
-                .clipShape(Capsule())
+            )
+            .disabled(item.remindAt == nil)
         }
         .frame(minHeight: 58)
-        .opacity(0.55)
         .overlay(
             Rectangle()
                 .fill(Color(.systemGray5))
                 .frame(height: 1),
             alignment: .bottom
+        )
+    }
+
+    var reminderToggleBinding: Binding<Bool> {
+
+        Binding(
+            get: {
+                item.reminderEnabled
+            },
+            set: { newValue in
+
+                guard newValue
+                else {
+
+                    item.reminderEnabled = false
+
+                    NotificationManager.cancelReminder(
+                        for: item
+                    )
+
+                    saveChanges()
+                    return
+                }
+
+                NotificationManager.requestAuthorization { granted in
+
+                    item.reminderEnabled = granted
+
+                    if granted {
+
+                        NotificationManager.scheduleReminder(
+                            for: item
+                        )
+                    }
+
+                    saveChanges()
+                }
+            }
         )
     }
 }
