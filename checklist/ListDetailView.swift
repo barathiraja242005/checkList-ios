@@ -21,7 +21,9 @@ struct ListDetailView: View {
     private var allItems: [ChecklistListItem]
 
     // MARK: - Suggestions
+    // TODO: Re-enable "Add from your lists" feature in the future.
 
+    /*
     private let suggestions: [String] = [
         "Milk",
         "Eggs",
@@ -36,6 +38,7 @@ struct ListDetailView: View {
     ]
 
     @State private var showingSuggestions = false
+    */
 
     // MARK: - Add Item
 
@@ -77,7 +80,8 @@ struct ListDetailView: View {
 
                     listHeader
 
-                    addFromListsButton
+                    // TODO: Re-enable "Add from your lists" feature in the future.
+                    // addFromListsButton
 
                     itemsSection
 
@@ -90,16 +94,18 @@ struct ListDetailView: View {
         }
         .background(Color.white)
         .navigationBarBackButtonHidden(true)
+
+        /*
         .sheet(
             isPresented: $showingSuggestions
         ) {
-
             suggestionSheet
                 .presentationDetents(
                     [.medium, .large]
                 )
                 .presentationDragIndicator(.visible)
         }
+        */
     }
 }
 
@@ -181,7 +187,9 @@ private extension ListDetailView {
     }
 }
 
-// MARK: - Add From Lists
+/*
+ // MARK: - Add From Lists
+ // TODO: Re-enable this feature in the future.
 
 private extension ListDetailView {
 
@@ -224,6 +232,7 @@ private extension ListDetailView {
         .padding(.bottom, 18)
     }
 }
+*/
 
 // MARK: - Items
 
@@ -239,19 +248,35 @@ private extension ListDetailView {
                     item: item,
                     list: list
                 )
-                .listRowInsets(EdgeInsets())
-                .listRowSeparatorTint(Color(.systemGray6))
-                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                .alignmentGuide(.listRowSeparatorTrailing) { $0.width }
-                .listRowBackground(Color.clear)
+                .listRowInsets(
+                    EdgeInsets()
+                )
+                .listRowSeparatorTint(
+                    Color(.systemGray6)
+                )
+                .alignmentGuide(
+                    .listRowSeparatorLeading
+                ) { _ in
+                    0
+                }
+                .alignmentGuide(
+                    .listRowSeparatorTrailing
+                ) { $0.width }
+                .listRowBackground(
+                    Color.clear
+                )
             }
-            .onMove(perform: moveItems)
+            .onMove(
+                perform: moveItems
+            )
         }
         .listStyle(.plain)
         .scrollDisabled(true)
         .scrollContentBackground(.hidden)
         .frame(
-            height: CGFloat(allItems.count) * 47
+            height: CGFloat(
+                allItems.count
+            ) * 47
         )
     }
 
@@ -268,6 +293,7 @@ private extension ListDetailView {
         )
 
         for (index, item) in reordered.enumerated() {
+
             item.position = index
         }
 
@@ -395,7 +421,9 @@ private extension ListDetailView {
     }
 }
 
-// MARK: - Suggestions Sheet
+/*
+ // MARK: - Suggestions Sheet
+ // TODO: Re-enable this feature in the future.
 
 private extension ListDetailView {
 
@@ -495,6 +523,7 @@ private extension ListDetailView {
         }
     }
 }
+*/
 
 // MARK: - Preview
 
