@@ -77,7 +77,7 @@ struct TodayItemRow: View {
             )
             .presentationDetents([.height(250)])
             .presentationDragIndicator(.visible)
-            .presentationBackground(Color.white)
+            .presentationBackground(Color(.systemBackground))
         }
 
         // MARK: - One-Time Item Delete Confirmation

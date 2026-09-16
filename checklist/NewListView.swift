@@ -176,7 +176,7 @@ struct NewListView: View {
             .padding(.top, 10)
             .padding(.bottom, 24)
         }
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .navigationBarBackButtonHidden(true)
         .backSwipe()
     }

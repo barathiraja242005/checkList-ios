@@ -81,7 +81,7 @@ struct TimePickerView: View {
 
             bottomBar
         }
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .clipShape(
             RoundedRectangle(
                 cornerRadius: 28,

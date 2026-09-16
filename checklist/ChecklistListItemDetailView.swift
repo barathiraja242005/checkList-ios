@@ -23,7 +23,7 @@ struct ChecklistListItemDetailView: View {
             content
             Spacer()
         }
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .navigationBarBackButtonHidden(true)
         .backSwipe()
         

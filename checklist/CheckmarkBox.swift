@@ -1,10 +1,11 @@
 import SwiftUI
 
 struct CheckmarkBox: View {
-    
+
     let isChecked: Bool
-    
+
     var body: some View {
+
         RoundedRectangle(cornerRadius: 6)
             .fill(
                 isChecked
@@ -13,9 +14,10 @@ struct CheckmarkBox: View {
                     green: 0.42,
                     blue: 0.31
                 )
-                : Color.white
+                : Color(.systemBackground)
             )
             .overlay {
+
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(
                         isChecked
@@ -25,7 +27,9 @@ struct CheckmarkBox: View {
                     )
             }
             .overlay {
+
                 if isChecked {
+
                     Image(systemName: "checkmark")
                         .font(
                             .system(

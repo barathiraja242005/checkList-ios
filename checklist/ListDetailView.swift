@@ -93,7 +93,7 @@ struct ListDetailView: View {
             }
             .scrollIndicators(.hidden)
         }
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .navigationBarBackButtonHidden(true)
         .backSwipe()
 

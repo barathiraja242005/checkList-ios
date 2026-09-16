@@ -61,7 +61,7 @@ struct SwipeActionRow<Content: View>: View {
             )
 
             content
-                .background(Color.white)
+                .background(Color(.systemBackground))
                 .offset(x: contentOffset)
         }
         .background {

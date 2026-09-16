@@ -96,7 +96,7 @@ struct ContentView: View {
 
                 floatingAddButton
             }
-            .background(Color.white)
+            .background(Color(.systemBackground))
 
             // MARK: - Navigation Destinations
 

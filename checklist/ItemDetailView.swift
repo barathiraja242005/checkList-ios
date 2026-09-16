@@ -31,7 +31,7 @@ struct ItemDetailView: View {
 
             Spacer()
         }
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .navigationBarBackButtonHidden(true)
         .backSwipe()
         .onAppear {

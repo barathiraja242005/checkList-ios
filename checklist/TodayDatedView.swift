@@ -97,7 +97,7 @@ struct TodayDatedView: View {
 
             itemsList
         }
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .navigationBarBackButtonHidden(true)
         .backSwipe()
 
