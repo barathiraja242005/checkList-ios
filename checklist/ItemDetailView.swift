@@ -17,7 +17,6 @@ struct ItemDetailView: View {
     @State private var showingTimePicker = false
     @State private var selectedTime = Date()
     @State private var showingRemoveSheet = false
-    @State private var showingDeleteConfirmation = false
     @State private var showingDatePicker = false
 
     // Kept so an emptied name can be restored rather than saved blank.
@@ -113,20 +112,6 @@ struct ItemDetailView: View {
                 // 290 to fit the redesigned sheet's card layout.
                 .presentationDetents([.height(290)])
                 .presentationDragIndicator(.visible)
-        }
-        .alert(
-            "Delete \(item.text)?",
-            isPresented: $showingDeleteConfirmation
-        ) {
-            Button("Delete", role: .destructive) {
-                deleteOneTimeItem()
-            }
-
-            Button("Cancel", role: .cancel) {
-                showingDeleteConfirmation = false
-            }
-        } message: {
-            Text("This item will be permanently deleted.")
         }
     }
 }
@@ -493,11 +478,11 @@ private extension ItemDetailView {
         Button {
 
             // "Just today" vs "future days" is only a real choice for a
-            // repeating item; a one-off just needs confirming.
+            // repeating item; a one-off just goes.
             if item.repeatsDaily {
                 showingRemoveSheet = true
             } else {
-                showingDeleteConfirmation = true
+                deleteOneTimeItem()
             }
 
         } label: {
@@ -551,7 +536,6 @@ private extension ItemDetailView {
             context: modelContext
         )
 
-        showingDeleteConfirmation = false
         dismiss()
     }
 }

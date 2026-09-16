@@ -11,6 +11,9 @@ struct NewListView: View {
     @Environment(\.modelContext)
     private var modelContext
 
+    @Query
+    private var existingLists: [ChecklistList]
+
     @State private var listName = ""
     @State private var selectedCategory = "Grocery"
 
@@ -323,7 +326,11 @@ private extension NewListView {
 
         let newList = ChecklistList(
             title: trimmedName,
-            category: selectedCategory
+            category: selectedCategory,
+            position:
+                ChecklistListOrdering.nextPosition(
+                    after: existingLists
+                )
         )
 
         modelContext.insert(newList)

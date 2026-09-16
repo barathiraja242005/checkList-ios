@@ -13,7 +13,6 @@ struct OverdueTodayItemRow: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var navigateToDetail = false
-    @State private var showingDeleteConfirmation = false
 
     var body: some View {
 
@@ -25,7 +24,7 @@ struct OverdueTodayItemRow: View {
                 navigateToDetail = true
             },
             onDelete: {
-                showingDeleteConfirmation = true
+                deleteItem()
             }
         )
         .navigationDestination(
@@ -34,20 +33,6 @@ struct OverdueTodayItemRow: View {
             ItemDetailView(
                 item: item
             )
-        }
-        .alert(
-            "Delete \(item.text)?",
-            isPresented: $showingDeleteConfirmation
-        ) {
-            Button("Delete", role: .destructive) {
-                deleteItem()
-            }
-
-            Button("Cancel", role: .cancel) {
-                showingDeleteConfirmation = false
-            }
-        } message: {
-            Text("This item will be permanently deleted.")
         }
     }
 
@@ -171,7 +156,6 @@ struct OverdueTodayItemRow: View {
 
         modelContext.delete(item)
 
-        showingDeleteConfirmation = false
 
         save()
     }

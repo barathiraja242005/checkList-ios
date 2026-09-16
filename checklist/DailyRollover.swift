@@ -60,7 +60,23 @@ enum DailyRollover {
 
         for item in recurringItems {
 
-            item.checked = false
+            // A day closed ahead of time stays closed when it arrives, and
+            // completedThrough is dropped once it no longer reaches past
+            // today — `checked` carries today's state from here.
+            if let through = item.completedThrough {
+
+                let throughDay = calendar.startOfDay(for: through)
+
+                item.checked = throughDay >= today
+
+                if throughDay <= today {
+                    item.completedThrough = nil
+                }
+
+            } else {
+
+                item.checked = false
+            }
 
             if let skippedDate = item.skippedDate,
                 calendar.startOfDay(for: skippedDate) < today {
@@ -119,6 +135,14 @@ enum DailyRollover {
                 continue
             }
 
+            // Either ticked off on the day itself, or closed in advance from
+            // the Tasks tab.
+            let wasCompleted =
+                item.checked
+                || (item.completedThrough.map {
+                    calendar.startOfDay(for: $0) >= dayStart
+                } ?? false)
+
             let alreadyExists = occurrence.items.contains {
                 $0.sourceItemID == item.id
             }
@@ -139,8 +163,8 @@ enum DailyRollover {
                 text: item.text,
                 remindAt: item.remindAt,
                 position: nextPosition,
-                checked: item.checked,
-                checkedAt: item.checked ? dayStart : nil,
+                checked: wasCompleted,
+                checkedAt: wasCompleted ? dayStart : nil,
                 occurrence: occurrence
             )
 

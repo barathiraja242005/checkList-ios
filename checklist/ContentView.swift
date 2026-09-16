@@ -12,10 +12,6 @@ struct ContentView: View {
     @Environment(\.modelContext)
     private var modelContext
 
-    // MARK: - Navigation
-
-    @State private var navigationPath = NavigationPath()
-
     // MARK: - Today Items
 
     @Query(
@@ -30,16 +26,11 @@ struct ContentView: View {
     @Query
     private var checklistItems: [ChecklistListItem]
 
-    // MARK: - Lists
-
-    @Query(
-        sort: [
-            SortDescriptor(\ChecklistList.title)
-        ]
-    )
-    private var lists: [ChecklistList]
-
     // MARK: - Add Item State
+
+    // Kept per tab and remembered between launches.
+    @AppStorage("todayShowsCompleted")
+    private var showsCompleted = true
 
     @State private var isAddingItem = false
     @State private var newItemText = ""
@@ -68,35 +59,29 @@ struct ContentView: View {
 
     var body: some View {
 
-        NavigationStack(
-            path: $navigationPath
-        ) {
+        NavigationStack {
 
-            ZStack(
-                alignment: .bottomTrailing
-            ) {
+            ScrollView {
 
-                ScrollView {
+                VStack(
+                    alignment: .leading,
+                    spacing: 0
+                ) {
 
-                    VStack(
-                        alignment: .leading,
-                        spacing: 0
-                    ) {
+                    header
 
-                        header
+                    TaskFilterChips(
+                        showsCompleted: $showsCompleted
+                    )
+                    .padding(.top, 16)
 
-                        todayItemsSection
-
-                        listsSection
-                    }
-                    .padding(.horizontal, 34)
-                    .padding(.top, 28)
-                    .padding(.bottom, 110)
+                    todayItemsSection
                 }
-                .scrollIndicators(.hidden)
-
-                floatingAddButton
+                .padding(.horizontal, 34)
+                .padding(.top, 28)
+                .padding(.bottom, 60)
             }
+            .scrollIndicators(.hidden)
             .pageBackground()
 
             // Leaving the screen abandons a half-started item, so the
@@ -105,60 +90,7 @@ struct ContentView: View {
                 cancelAddItem()
             }
 
-            // MARK: - Navigation Destinations
-
-            .navigationDestination(
-                for: AppRoute.self
-            ) { route in
-
-                switch route {
-
-                case .newList:
-
-                    NewListView(
-                        navigationPath: $navigationPath
-                    )
-
-                case .editList(let listID):
-
-                    if let list =
-                        lists.first(
-                            where: {
-                                $0.id == listID
-                            }
-                        ) {
-
-                        NewListView(
-                            navigationPath: $navigationPath,
-                            editingList: list
-                        )
-
-                    } else {
-
-                        Text("List not found")
-                    }
-
-                case .listDetail(let listID):
-
-                    if let list =
-                        lists.first(
-                            where: {
-                                $0.id == listID
-                            }
-                        ) {
-
-                        ListDetailView(
-                            list: list
-                        )
-
-                    } else {
-
-                        Text("List not found")
-                    }
-                }
-            }
         }
-
         .sheet(
             isPresented: $showingTimePicker
         ) {
@@ -210,6 +142,11 @@ private extension ContentView {
 
         return todayItems.filter { item in
 
+            // Later tasks are parked in their own section.
+            if item.isLater {
+                return false
+            }
+
             if let skippedDate = item.skippedDate,
                 calendar.isDate(
                     skippedDate,
@@ -250,6 +187,7 @@ private extension ContentView {
                 guard
                     !item.repeatsDaily,
                     !item.checked,
+                    !item.isLater,
                     let scheduledDate = item.scheduledDate
                 else {
                     return false
@@ -278,6 +216,26 @@ private extension ContentView {
                 }
 
                 return firstDate < secondDate
+            }
+    }
+
+    // The filter only decides what is drawn — the "x of y done" count above
+    // still speaks for the whole day.
+    var displayedTodayItems: [TodayItem] {
+
+        showsCompleted
+            ? visibleTodayItems
+            : visibleTodayItems.filter {
+                !$0.checked
+            }
+    }
+
+    var displayedScheduledChecklistItems: [ChecklistListItem] {
+
+        showsCompleted
+            ? scheduledTodayChecklistItems
+            : scheduledTodayChecklistItems.filter {
+                !$0.checked
             }
     }
 
@@ -476,7 +434,7 @@ private extension ContentView {
                 .frame(height: 20)
 
             ForEach(
-                visibleTodayItems
+                displayedTodayItems
             ) { item in
 
                 TodayItemRow(
@@ -494,7 +452,7 @@ private extension ContentView {
             }
 
             ForEach(
-                scheduledTodayChecklistItems
+                displayedScheduledChecklistItems
             ) { item in
 
                 scheduledChecklistItemRow(
@@ -1067,84 +1025,6 @@ private extension ContentView {
         hasSelectedTime = false
         isAddingItem = false
         showingTimePicker = false
-    }
-}
-
-// MARK: - Lists
-
-private extension ContentView {
-
-    var listsSection: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 0
-        ) {
-
-            Text("Lists")
-                .font(
-                    .system(
-                        size: 16,
-                        weight: .semibold
-                    )
-                )
-                .foregroundStyle(
-                    .secondary
-                )
-                .padding(.top, 18)
-                .padding(.bottom, 8)
-
-            ForEach(
-                lists
-            ) { list in
-
-                ChecklistListRow(
-                    list: list,
-                    navigationPath: $navigationPath
-                )
-            }
-        }
-    }
-}
-
-// MARK: - Floating Add Button
-
-private extension ContentView {
-
-    var floatingAddButton: some View {
-
-        Button {
-
-            navigationPath.append(
-                AppRoute.newList
-            )
-
-        } label: {
-
-            Image(
-                systemName: "plus"
-            )
-            .font(
-                .system(
-                    size: 23,
-                    weight: .medium
-                )
-            )
-            .foregroundStyle(.white)
-            .frame(
-                width: 64,
-                height: 64
-            )
-            .background(
-                Color.accentGreen
-            )
-            .clipShape(
-                Circle()
-            )
-        }
-        .buttonStyle(.plain)
-        .padding(.trailing, 24)
-        .padding(.bottom, 25)
     }
 }
 

@@ -5,6 +5,15 @@ struct TodayItemRow: View {
 
     @Bindable var item: TodayItem
 
+    // Today's own list has no use for a date on every row — they are all
+    // today. The Tasks tab mixes days together, so it asks for them.
+    var showsDate: Bool = false
+
+    // In the Tasks tab a repeat stands for its next open day rather than for
+    // today, so its box starts empty and ticking it closes that day and moves
+    // the row on to the one after.
+    var tracksNextDue: Bool = false
+
     @Environment(\.modelContext)
     private var modelContext
 
@@ -13,7 +22,6 @@ struct TodayItemRow: View {
 
     @State private var navigateToDetail = false
     @State private var showingRemoveSheet = false
-    @State private var showingDeleteConfirmation = false
 
 
     var body: some View {
@@ -71,22 +79,6 @@ struct TodayItemRow: View {
             .presentationBackground(Color.appBackground)
         }
 
-        // MARK: - One-Time Item Delete Confirmation
-
-        .alert(
-            "Delete \(item.text)?",
-            isPresented: $showingDeleteConfirmation
-        ) {
-            Button("Delete", role: .destructive) {
-                deleteOneTimeItem()
-            }
-
-            Button("Cancel", role: .cancel) {
-                showingDeleteConfirmation = false
-            }
-        } message: {
-            Text("This item will be permanently deleted.")
-        }
     }
 
     // MARK: - Row Content
@@ -98,11 +90,10 @@ struct TodayItemRow: View {
             // MARK: - Checkbox
 
             Button {
-                item.checked.toggle()
-                saveChanges()
+                toggleCompletion()
             } label: {
                 CheckmarkBox(
-                    isChecked: item.checked
+                    isChecked: displaysChecked
                 )
             }
             .buttonStyle(.plain)
@@ -112,23 +103,40 @@ struct TodayItemRow: View {
             Button {
                 navigateToDetail = true
             } label: {
-                Text(item.text)
-                    .font(
-                        .system(size: 17)
-                    )
-                    .foregroundStyle(
-                        item.checked
-                            ? Color.secondary
-                            : Color.primary
-                    )
-                    .strikethrough(
-                        item.checked,
-                        color: .secondary
-                    )
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 2
+                ) {
+
+                    Text(item.text)
+                        .font(
+                            .system(size: 17)
+                        )
+                        .foregroundStyle(
+                            displaysChecked
+                                ? Color.secondary
+                                : Color.primary
+                        )
+                        .strikethrough(
+                            displaysChecked,
+                            color: .secondary
+                        )
+
+                    if showsDate {
+
+                        Text(dateLabel)
+                            .font(
+                                .system(size: 11)
+                            )
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
             }
             .buttonStyle(.plain)
 
@@ -155,6 +163,52 @@ struct TodayItemRow: View {
         .frame(minHeight: 46)
     }
 
+    // MARK: - Completion
+
+    // A repeat in next-due mode is never shown as done: the day on the row is
+    // by definition the first one still open.
+    private var displaysChecked: Bool {
+
+        tracksNextDue && item.repeatsDaily
+            ? false
+            : item.checked
+    }
+
+    private func toggleCompletion() {
+
+        if tracksNextDue && item.repeatsDaily {
+
+            DailyCompletion.closeNextDay(for: item)
+
+        } else {
+
+            item.checked.toggle()
+        }
+
+        saveChanges()
+    }
+
+    // MARK: - Date
+
+    // A repeat carries no date of its own, so it shows the next day it is
+    // actually due: today until today's is dealt with, then tomorrow. A
+    // parked task has no date at all and says so.
+    private var dateLabel: String {
+
+        if item.repeatsDaily {
+            return DailyCompletion.dayLabel(
+                for: DailyCompletion.nextDueDate(for: item)
+            )
+        }
+
+        guard let scheduledDate = item.scheduledDate
+        else {
+            return "No date"
+        }
+
+        return DailyCompletion.dayLabel(for: scheduledDate)
+    }
+
     // MARK: - Delete Handling
 
     private func handleDelete() {
@@ -165,7 +219,9 @@ struct TodayItemRow: View {
 
         } else {
 
-            showingDeleteConfirmation = true
+            // A one-off delete is a single swipe away from undone by
+            // retyping it, so it goes straight through without a prompt.
+            deleteOneTimeItem()
         }
     }
 

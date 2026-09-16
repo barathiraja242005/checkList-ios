@@ -48,6 +48,10 @@ struct checklistApp: App {
                 context: context
             )
 
+            ChecklistListOrdering.applyInitialPositionsIfNeeded(
+                context: context
+            )
+
         } catch {
 
             fatalError(
@@ -60,7 +64,7 @@ struct checklistApp: App {
 
         WindowGroup {
 
-            ContentView()
+            RootTabView()
                 // Pinned to light regardless of the device setting. The
                 // palette still resolves both appearances, so dropping this
                 // line is all it takes to follow the system again.

@@ -19,6 +19,16 @@ final class TodayItem {
     // this entirely, since they are regenerated each day.
     var scheduledDate: Date?
 
+    // Parks the task in Home's Later section instead of Today: something to
+    // get to eventually, with no day attached. Later tasks never carry a
+    // date or a repeat, so they never roll into Overdue.
+    var isLater: Bool = false
+
+    // For a daily repeat: the last day closed ahead of time. Today's own
+    // state stays in `checked`; this covers the run of days after it, so the
+    // Tasks tab can show the next day that is still open.
+    var completedThrough: Date?
+
     init(
         id: UUID = UUID(),
         text: String,
@@ -28,7 +38,9 @@ final class TodayItem {
         repeatsDaily: Bool = false,
         skippedDate: Date? = nil,
         reminderEnabled: Bool = false,
-        scheduledDate: Date? = nil
+        scheduledDate: Date? = nil,
+        isLater: Bool = false,
+        completedThrough: Date? = nil
     ) {
         self.id = id
         self.text = text
@@ -39,5 +51,7 @@ final class TodayItem {
         self.skippedDate = skippedDate
         self.reminderEnabled = reminderEnabled
         self.scheduledDate = scheduledDate
+        self.isLater = isLater
+        self.completedThrough = completedThrough
     }
 }

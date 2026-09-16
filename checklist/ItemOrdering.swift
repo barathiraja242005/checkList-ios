@@ -152,3 +152,61 @@ enum ChecklistListItemOrdering {
         defaults.set(true, forKey: key)
     }
 }
+
+// MARK: - Checklist Lists
+
+// ChecklistList gained a `position` field alongside drag-to-reorder on the
+// Lists tab. Existing lists all default to 0, so this hands them sequential
+// positions once, keeping the alphabetical order they were shown in until
+// the first drag.
+enum ChecklistListOrdering {
+
+    static func applyInitialPositionsIfNeeded(
+        context: ModelContext
+    ) {
+
+        let key = "hasAppliedInitialListPositions"
+        let defaults = UserDefaults.standard
+
+        guard !defaults.bool(forKey: key)
+        else {
+            return
+        }
+
+        let lists =
+            (try? context.fetch(FetchDescriptor<ChecklistList>()))
+            ?? []
+
+        let sorted =
+            lists.sorted {
+                $0.title.localizedCompare($1.title)
+                    == .orderedAscending
+            }
+
+        for (index, list) in sorted.enumerated() {
+            list.position = index
+        }
+
+        do {
+
+            try context.save()
+
+        } catch {
+
+            print(
+                "Failed to apply initial list positions: \(error)"
+            )
+        }
+
+        defaults.set(true, forKey: key)
+    }
+
+    // A freshly made list goes to the bottom rather than landing in the
+    // middle of an order the user arranged by hand.
+    static func nextPosition(
+        after lists: [ChecklistList]
+    ) -> Int {
+
+        (lists.map { $0.position }.max() ?? -1) + 1
+    }
+}
