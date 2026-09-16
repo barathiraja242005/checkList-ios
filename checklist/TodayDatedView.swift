@@ -797,7 +797,7 @@ private extension TodayDatedView {
 
                         Text("Add item")
                             .font(
-                                .system(size: 15)
+                                .system(size: 14)
                             )
                     }
                     .foregroundStyle(

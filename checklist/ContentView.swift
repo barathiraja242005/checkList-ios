@@ -797,7 +797,7 @@ private extension ContentView {
 
                 Text("Add item")
                     .font(
-                        .system(size: 17)
+                        .system(size: 15)
                     )
                     .foregroundStyle(
                         .secondary
