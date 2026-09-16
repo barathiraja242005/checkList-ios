@@ -180,6 +180,10 @@ struct TodayItemRow: View {
 
             DailyCompletion.closeNextDay(for: item)
 
+        } else if item.repeatsDaily {
+
+            DailyCompletion.toggleToday(for: item)
+
         } else {
 
             item.checked.toggle()

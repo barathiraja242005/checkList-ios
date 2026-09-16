@@ -102,11 +102,14 @@ enum ReminderEntry: Identifiable {
         }
     }
 
-    // When this reminder next goes off, used for ordering. A daily repeat
-    // has no date of its own, so it is read against today.
-    var fireDate: Date {
+    // When this reminder next goes off, or nil when it has already been and
+    // gone — a one-off only fires once, so once its time has passed there is
+    // nothing left to list. A daily repeat always has a next one: today's if
+    // it is still to come, otherwise tomorrow's.
+    var nextFireDate: Date? {
 
         let calendar = Calendar.current
+        let now = Date()
 
         switch self {
 
@@ -114,27 +117,61 @@ enum ReminderEntry: Identifiable {
 
             guard let remindAt = item.remindAt
             else {
-                return .distantFuture
+                return nil
             }
 
-            let day =
-                item.repeatsDaily
-                ? Date()
-                : (item.scheduledDate ?? Date())
+            if item.repeatsDaily {
 
-            return calendar.date(
-                bySettingHour:
-                    calendar.component(.hour, from: remindAt),
-                minute:
-                    calendar.component(.minute, from: remindAt),
-                second: 0,
-                of: day
-            ) ?? remindAt
+                let todayFire = time(
+                    of: remindAt,
+                    on: now
+                )
+
+                guard todayFire <= now
+                else {
+                    return todayFire
+                }
+
+                return calendar.date(
+                    byAdding: .day,
+                    value: 1,
+                    to: todayFire
+                )
+            }
+
+            let fire = time(
+                of: remindAt,
+                on: item.scheduledDate ?? now
+            )
+
+            return fire > now ? fire : nil
 
         case .listItem(let item):
 
-            return item.scheduledDate ?? .distantFuture
+            guard let scheduledDate = item.scheduledDate
+            else {
+                return nil
+            }
+
+            return scheduledDate > now ? scheduledDate : nil
         }
+    }
+
+    private func time(
+        of time: Date,
+        on day: Date
+    ) -> Date {
+
+        let calendar = Calendar.current
+
+        return calendar.date(
+            bySettingHour:
+                calendar.component(.hour, from: time),
+            minute:
+                calendar.component(.minute, from: time),
+            second: 0,
+            of: day
+        ) ?? time
     }
 
     // Says where the reminder came from, or how often it repeats.
@@ -217,8 +254,20 @@ private extension RemindersView {
                 }
 
         return (todayReminders + listReminders)
+            .compactMap { entry -> (ReminderEntry, Date)? in
+
+                guard let fire = entry.nextFireDate
+                else {
+                    return nil
+                }
+
+                return (entry, fire)
+            }
             .sorted {
-                $0.fireDate < $1.fireDate
+                $0.1 < $1.1
+            }
+            .map {
+                $0.0
             }
     }
 }
@@ -247,8 +296,8 @@ private extension RemindersView {
 
             Text(
                 reminders.count == 1
-                    ? "1 reminder on"
-                    : "\(reminders.count) reminders on"
+                    ? "1 coming up"
+                    : "\(reminders.count) coming up"
             )
             .font(
                 .system(size: 16)
@@ -392,7 +441,7 @@ private extension RemindersView {
             spacing: 6
         ) {
 
-            Text("No reminders on")
+            Text("Nothing coming up")
                 .font(
                     .system(
                         size: 17,
@@ -404,7 +453,7 @@ private extension RemindersView {
                 )
 
             Text(
-                "Open a task, set a time, and turn on Remind me."
+                "Set a time on a task and turn on Remind me. Reminders drop off here once they have gone off."
             )
             .font(
                 .system(size: 15)

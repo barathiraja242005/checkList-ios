@@ -130,6 +130,29 @@ enum DailyCompletion {
         }
     }
 
+    // Today's own box, as tapped on the Today list. Reopening today also
+    // reopens anything closed after it: days are only ever closed in an
+    // unbroken run, so leaving tomorrow closed while today is open would
+    // send the Tasks tab off to a date that is not the next one due.
+    static func toggleToday(
+        for item: TodayItem,
+        now: Date = Date()
+    ) {
+
+        guard item.checked
+        else {
+
+            item.checked = true
+            return
+        }
+
+        reopen(
+            now,
+            for: item,
+            now: now
+        )
+    }
+
     // "Today" / "Tomorrow" / "Yesterday", and a written date past that.
     static func dayLabel(
         for date: Date
