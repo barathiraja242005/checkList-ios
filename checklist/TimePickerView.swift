@@ -81,7 +81,7 @@ struct TimePickerView: View {
 
             bottomBar
         }
-        .background(Color.white)
+        .pageBackground()
         .clipShape(
             RoundedRectangle(
                 cornerRadius: 28,
@@ -124,7 +124,7 @@ private extension TimePickerView {
             )
             .font(
                 .system(
-                    size: 21,
+                    size: 19,
                     weight: .bold
                 )
             )
@@ -133,7 +133,7 @@ private extension TimePickerView {
             Text(
                 "Times order your list. They don't send anything yet."
             )
-            .font(.system(size: 16))
+            .font(.system(size: 15))
             .foregroundStyle(.secondary)
             .fixedSize(
                 horizontal: false,
@@ -163,11 +163,7 @@ private extension TimePickerView {
                 style: .continuous
             )
             .fill(
-                Color(
-                    red: 0.95,
-                    green: 0.95,
-                    blue: 0.94
-                )
+                Color.appSurface
             )
             .frame(
                 height: 56
@@ -184,7 +180,7 @@ private extension TimePickerView {
                 Text(":")
                     .font(
                         .system(
-                            size: 24,
+                            size: 22,
                             weight: .medium
                         )
                     )
@@ -217,7 +213,7 @@ private extension TimePickerView {
                 )
                 .font(
                     .system(
-                        size: 24,
+                        size: 22,
                         weight: .regular
                     )
                 )
@@ -254,7 +250,7 @@ private extension TimePickerView {
                 )
                 .font(
                     .system(
-                        size: 24,
+                        size: 22,
                         weight: .regular
                     )
                 )
@@ -306,7 +302,7 @@ private extension TimePickerView {
                 Text("Clear")
                     .font(
                         .system(
-                            size: 18,
+                            size: 17,
                             weight: .regular
                         )
                     )
@@ -329,16 +325,12 @@ private extension TimePickerView {
                 Text("Done")
                     .font(
                         .system(
-                            size: 18,
+                            size: 17,
                             weight: .medium
                         )
                     )
                     .foregroundStyle(
-                        Color(
-                            red: 0.20,
-                            green: 0.48,
-                            blue: 0.37
-                        )
+                        Color.accentGreen
                     )
             }
             .buttonStyle(.plain)

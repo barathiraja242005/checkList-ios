@@ -7,11 +7,7 @@ struct RemoveItemSheet: View {
     let onTodayAndFuture: () -> Void
     let onCancel: () -> Void
 
-    private let accent = Color(
-        red: 0.12,
-        green: 0.42,
-        blue: 0.31
-    )
+    private let accent = Color.accentGreen
 
     var body: some View {
 
@@ -30,7 +26,7 @@ struct RemoveItemSheet: View {
                 Text("Remove “\(itemText)”?")
                     .font(
                         .system(
-                            size: 19,
+                            size: 17,
                             weight: .semibold
                         )
                     )
@@ -38,7 +34,7 @@ struct RemoveItemSheet: View {
                     .lineLimit(2)
 
                 Text("Earlier days keep their record either way.")
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .fixedSize(
                         horizontal: false,
@@ -89,7 +85,7 @@ struct RemoveItemSheet: View {
                 Text("Cancel")
                     .font(
                         .system(
-                            size: 16,
+                            size: 15,
                             weight: .medium
                         )
                     )
@@ -123,7 +119,7 @@ struct RemoveItemSheet: View {
             HStack(spacing: 14) {
 
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.system(size: 15))
                     .foregroundStyle(iconTint)
                     .frame(width: 24)
 
@@ -135,14 +131,14 @@ struct RemoveItemSheet: View {
                     Text(title)
                         .font(
                             .system(
-                                size: 16,
+                                size: 15,
                                 weight: .medium
                             )
                         )
                         .foregroundStyle(titleColor)
 
                     Text(subtitle)
-                        .font(.system(size: 12.5))
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
 

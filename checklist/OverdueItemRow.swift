@@ -55,19 +55,21 @@ struct OverdueItemRow: View {
 
     private var rowContent: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 6
-        ) {
+        // The checkbox sits outside the two-line stack so it centres against
+        // the whole row rather than aligning to the title line.
+        HStack(spacing: 16) {
 
-            HStack(spacing: 16) {
+            Button {
+                toggleChecked()
+            } label: {
+                checkbox
+            }
+            .buttonStyle(.plain)
 
-                Button {
-                    toggleChecked()
-                } label: {
-                    checkbox
-                }
-                .buttonStyle(.plain)
+            VStack(
+                alignment: .leading,
+                spacing: 6
+            ) {
 
                 Button {
                     navigateToDetail = true
@@ -75,7 +77,7 @@ struct OverdueItemRow: View {
 
                     Text(item.text)
                         .font(
-                            .system(size: 18)
+                            .system(size: 17)
                         )
                         .foregroundStyle(
                             item.checked
@@ -92,22 +94,21 @@ struct OverdueItemRow: View {
                         )
                 }
                 .buttonStyle(.plain)
-            }
 
-            HStack(spacing: 6) {
+                HStack(spacing: 6) {
 
                 if let listTitle = item.list?.title {
 
                     Text(listTitle)
                         .font(
-                            .system(size: 13)
+                            .system(size: 12)
                         )
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
 
                     Text("·")
                         .font(
-                            .system(size: 13)
+                            .system(size: 12)
                         )
                         .foregroundStyle(.secondary)
                 }
@@ -124,7 +125,7 @@ struct OverdueItemRow: View {
                         )
                     )
                     .font(
-                        .system(size: 13)
+                        .system(size: 12)
                     )
                     .foregroundStyle(
                         accent.opacity(0.85)
@@ -141,23 +142,19 @@ struct OverdueItemRow: View {
                     Text("Reschedule")
                         .font(
                             .system(
-                                size: 15,
+                                size: 14,
                                 weight: .semibold
                             )
                         )
                         .foregroundStyle(
-                            Color(
-                                red: 0.25,
-                                green: 0.48,
-                                blue: 0.39
-                            )
+                            Color.accentGreen
                         )
                 }
                 .buttonStyle(.plain)
+                }
             }
-            .padding(.leading, 38)
         }
-        .padding(.vertical, 11)
+        .padding(.vertical, 8)
         .overlay(
             Rectangle()
                 .fill(
@@ -188,11 +185,7 @@ struct OverdueItemRow: View {
             )
             .fill(
                 item.checked
-                    ? Color(
-                        red: 0.18,
-                        green: 0.48,
-                        blue: 0.36
-                    )
+                    ? Color.accentGreen
                     : Color.clear
             )
         }
@@ -203,7 +196,7 @@ struct OverdueItemRow: View {
                 Image(systemName: "checkmark")
                     .font(
                         .system(
-                            size: 11,
+                            size: 10,
                             weight: .bold
                         )
                     )

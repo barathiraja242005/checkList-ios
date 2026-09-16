@@ -8,12 +8,10 @@ struct CheckmarkBox: View {
         RoundedRectangle(cornerRadius: 6)
             .fill(
                 isChecked
-                ? Color(
-                    red: 0.12,
-                    green: 0.42,
-                    blue: 0.31
-                )
-                : Color.white
+                ? Color.accentGreen
+                // Clear rather than white, so the page tint shows through and
+                // the box matches the checkboxes used in the lists.
+                : Color.clear
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 6)
@@ -29,7 +27,7 @@ struct CheckmarkBox: View {
                     Image(systemName: "checkmark")
                         .font(
                             .system(
-                                size: 13,
+                                size: 12,
                                 weight: .bold
                             )
                         )

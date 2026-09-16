@@ -68,7 +68,7 @@ struct TodayItemRow: View {
             // 290 rather than 250 to fit the redesigned sheet's card layout.
             .presentationDetents([.height(290)])
             .presentationDragIndicator(.visible)
-            .presentationBackground(Color.white)
+            .presentationBackground(Color.appBackground)
         }
 
         // MARK: - One-Time Item Delete Confirmation
@@ -114,7 +114,7 @@ struct TodayItemRow: View {
             } label: {
                 Text(item.text)
                     .font(
-                        .system(size: 18)
+                        .system(size: 17)
                     )
                     .foregroundStyle(
                         item.checked
@@ -143,7 +143,7 @@ struct TodayItemRow: View {
                         .minute()
                 )
                 .font(
-                    .system(size: 16)
+                    .system(size: 15)
                 )
                 .foregroundStyle(.secondary)
             }
@@ -151,8 +151,8 @@ struct TodayItemRow: View {
         .padding(.leading, 2)
         // Vertical padding stays inside the 58pt minimum for a single-line
         // title, so only wrapped titles actually grow the row.
-        .padding(.vertical, 12)
-        .frame(minHeight: 58)
+        .padding(.vertical, 7)
+        .frame(minHeight: 46)
     }
 
     // MARK: - Delete Handling

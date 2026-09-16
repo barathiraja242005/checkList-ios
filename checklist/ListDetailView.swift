@@ -95,7 +95,7 @@ struct ListDetailView: View {
             }
             .scrollIndicators(.hidden)
         }
-        .background(Color.white)
+        .pageBackground()
         .navigationBarBackButtonHidden(true)
         .backSwipe()
 
@@ -135,14 +135,14 @@ private extension ListDetailView {
                     )
                     .font(
                         .system(
-                            size: 14,
+                            size: 13,
                             weight: .medium
                         )
                     )
 
                     Text("Home")
                         .font(
-                            .system(size: 17)
+                            .system(size: 16)
                         )
                 }
                 .foregroundStyle(.secondary)
@@ -171,7 +171,7 @@ private extension ListDetailView {
             Text(list.title)
                 .font(
                     .system(
-                        size: 29,
+                        size: 26,
                         weight: .bold
                     )
                 )
@@ -179,7 +179,7 @@ private extension ListDetailView {
 
             Text(list.category)
                 .font(
-                    .system(size: 16)
+                    .system(size: 15)
                 )
                 .foregroundStyle(.secondary)
         }
@@ -214,7 +214,7 @@ private extension ListDetailView {
                 Text("Add from your lists")
                     .font(
                         .system(
-                            size: 15,
+                            size: 14,
                             weight: .medium
                         )
                     )
@@ -321,7 +321,7 @@ private extension ListDetailView {
                         text: $newItemText
                     )
                     .font(
-                        .system(size: 16)
+                        .system(size: 15)
                     )
                     .focused($isNewItemFocused)
                     .submitLabel(.done)
@@ -334,11 +334,7 @@ private extension ListDetailView {
                         addNewItem()
                     }
                     .foregroundStyle(
-                        Color(
-                            red: 0.18,
-                            green: 0.48,
-                            blue: 0.36
-                        )
+                        Color.accentGreen
                     )
                 }
                 .frame(minHeight: 50)
@@ -361,13 +357,13 @@ private extension ListDetailView {
 
                         Text("+")
                             .font(
-                                .system(size: 20)
+                                .system(size: 18)
                             )
                             .foregroundStyle(.secondary)
 
                         Text("Add item")
                             .font(
-                                .system(size: 16)
+                                .system(size: 15)
                             )
                             .foregroundStyle(.secondary)
 
@@ -464,11 +460,7 @@ private extension ListDetailView {
                                 systemName: "plus"
                             )
                             .foregroundStyle(
-                                Color(
-                                    red: 0.18,
-                                    green: 0.48,
-                                    blue: 0.36
-                                )
+                                Color.accentGreen
                             )
                         }
                     }

@@ -40,7 +40,7 @@ struct OccurrenceItemRow: View {
             .disabled(isFuture)
 
             Text(item.text)
-                .font(.system(size: 18))
+                .font(.system(size: 17))
                 .foregroundStyle(
                     isPast
                         ? Color.secondary
@@ -63,7 +63,7 @@ struct OccurrenceItemRow: View {
                         .hour()
                         .minute()
                 )
-                .font(.system(size: 16))
+                .font(.system(size: 15))
                 .foregroundStyle(
                     isPast
                         ? Color.secondary.opacity(0.65)

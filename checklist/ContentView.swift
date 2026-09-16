@@ -3,6 +3,7 @@ import SwiftData
 
 enum AppRoute: Hashable {
     case newList
+    case editList(UUID)
     case listDetail(UUID)
 }
 
@@ -96,7 +97,7 @@ struct ContentView: View {
 
                 floatingAddButton
             }
-            .background(Color.white)
+            .pageBackground()
 
             // Leaving the screen abandons a half-started item, so the
             // composer is not still sitting open on the way back.
@@ -117,6 +118,25 @@ struct ContentView: View {
                     NewListView(
                         navigationPath: $navigationPath
                     )
+
+                case .editList(let listID):
+
+                    if let list =
+                        lists.first(
+                            where: {
+                                $0.id == listID
+                            }
+                        ) {
+
+                        NewListView(
+                            navigationPath: $navigationPath,
+                            editingList: list
+                        )
+
+                    } else {
+
+                        Text("List not found")
+                    }
 
                 case .listDetail(let listID):
 
@@ -182,24 +202,83 @@ private extension ContentView {
 
     var visibleTodayItems: [TodayItem] {
 
-        let today =
-            Calendar.current.startOfDay(
-                for: Date()
-            )
+        let calendar = Calendar.current
+
+        let today = calendar.startOfDay(
+            for: Date()
+        )
 
         return todayItems.filter { item in
 
-            guard let skippedDate =
-                    item.skippedDate
+            if let skippedDate = item.skippedDate,
+                calendar.isDate(
+                    skippedDate,
+                    inSameDayAs: today
+                ) {
+
+                return false
+            }
+
+            // A dated one-off belongs to its own day; once that day has
+            // passed it moves to Overdue instead. Repeating and undated
+            // tasks always sit on Today.
+            guard
+                !item.repeatsDaily,
+                let scheduledDate = item.scheduledDate
             else {
                 return true
             }
 
-            return !Calendar.current.isDate(
-                skippedDate,
-                inSameDayAs: today
-            )
+            return calendar.startOfDay(
+                for: scheduledDate
+            ) >= today
         }
+    }
+
+    // One-off tasks whose day has passed and that were never completed.
+    var overdueTodayItems: [TodayItem] {
+
+        let calendar = Calendar.current
+
+        let today = calendar.startOfDay(
+            for: Date()
+        )
+
+        return todayItems
+            .filter { item in
+
+                guard
+                    !item.repeatsDaily,
+                    !item.checked,
+                    let scheduledDate = item.scheduledDate
+                else {
+                    return false
+                }
+
+                if let skippedDate = item.skippedDate,
+                    calendar.isDate(
+                        skippedDate,
+                        inSameDayAs: today
+                    ) {
+
+                    return false
+                }
+
+                return calendar.startOfDay(
+                    for: scheduledDate
+                ) < today
+            }
+            .sorted { first, second in
+
+                guard
+                    let firstDate = first.scheduledDate,
+                    let secondDate = second.scheduledDate
+                else {
+                    return false
+                }
+
+                return firstDate < secondDate
+            }
     }
 
     // MARK: - Scheduled List Items
@@ -329,7 +408,7 @@ private extension ContentView {
                 Text("Today")
                     .font(
                         .system(
-                            size: 29,
+                            size: 26,
                             weight: .bold
                         )
                     )
@@ -360,13 +439,13 @@ private extension ContentView {
                     )
                     .font(
                         .system(
-                            size: 11,
+                            size: 10,
                             weight: .semibold
                         )
                     )
                 }
                 .font(
-                    .system(size: 17)
+                    .system(size: 16)
                 )
                 .foregroundStyle(
                     .secondary
@@ -394,7 +473,7 @@ private extension ContentView {
         VStack(spacing: 0) {
 
             Spacer()
-                .frame(height: 38)
+                .frame(height: 20)
 
             ForEach(
                 visibleTodayItems
@@ -403,7 +482,7 @@ private extension ContentView {
                 TodayItemRow(
                     item: item
                 )
-                .frame(minHeight: 59)
+                .frame(minHeight: 47)
                 .overlay(
                     Rectangle()
                         .fill(
@@ -432,7 +511,8 @@ private extension ContentView {
                 addItemRow
             }
 
-            if !overdueChecklistItems.isEmpty {
+            if !overdueChecklistItems.isEmpty
+                || !overdueTodayItems.isEmpty {
 
                 overdueSection
             }
@@ -478,11 +558,7 @@ private extension ContentView {
                     )
                     .fill(
                         item.checked
-                            ? Color(
-                                red: 0.18,
-                                green: 0.48,
-                                blue: 0.36
-                            )
+                            ? Color.accentGreen
                             : Color.clear
                     )
                 }
@@ -496,7 +572,7 @@ private extension ContentView {
                         )
                         .font(
                             .system(
-                                size: 11,
+                                size: 10,
                                 weight: .bold
                             )
                         )
@@ -527,7 +603,7 @@ private extension ContentView {
 
                     Text(item.text)
                         .font(
-                            .system(size: 18)
+                            .system(size: 17)
                         )
                         .foregroundStyle(
                             item.checked
@@ -545,7 +621,7 @@ private extension ContentView {
 
                         Text(listTitle)
                             .font(
-                                .system(size: 12)
+                                .system(size: 11)
                             )
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -570,7 +646,7 @@ private extension ContentView {
                         .minute()
                 )
                 .font(
-                    .system(size: 16)
+                    .system(size: 15)
                 )
                 .foregroundStyle(
                     .secondary
@@ -579,8 +655,8 @@ private extension ContentView {
             }
         }
         .padding(.leading, 2)
-        .padding(.vertical, 12)
-        .frame(minHeight: 59)
+        .padding(.vertical, 7)
+        .frame(minHeight: 47)
         .overlay(
             Rectangle()
                 .fill(
@@ -600,11 +676,7 @@ private extension ContentView {
     // delete elsewhere in the app.
     var overdueAccent: Color {
 
-        Color(
-            red: 0.72,
-            green: 0.44,
-            blue: 0.05
-        )
+        Color.overdueAmber
     }
 
     var overdueSection: some View {
@@ -619,19 +691,29 @@ private extension ContentView {
                 Image(
                     systemName: "exclamationmark.triangle.fill"
                 )
-                .font(.system(size: 13))
+                .font(.system(size: 12))
 
                 Text("Overdue")
                     .font(
                         .system(
-                            size: 17,
+                            size: 16,
                             weight: .semibold
                         )
                     )
             }
             .foregroundStyle(overdueAccent)
-            .padding(.top, 24)
+            .padding(.top, 12)
             .padding(.bottom, 10)
+
+            ForEach(
+                overdueTodayItems
+            ) { item in
+
+                OverdueTodayItemRow(
+                    item: item,
+                    accent: overdueAccent
+                )
+            }
 
             ForEach(
                 overdueChecklistItems
@@ -707,7 +789,7 @@ private extension ContentView {
 
                 Text("+")
                     .font(
-                        .system(size: 21)
+                        .system(size: 19)
                     )
                     .foregroundStyle(
                         .secondary
@@ -715,7 +797,7 @@ private extension ContentView {
 
                 Text("Add item")
                     .font(
-                        .system(size: 18)
+                        .system(size: 17)
                     )
                     .foregroundStyle(
                         .secondary
@@ -741,7 +823,7 @@ private extension ContentView {
 
                 Text("+")
                     .font(
-                        .system(size: 21)
+                        .system(size: 19)
                     )
                     .foregroundStyle(
                         .secondary
@@ -752,7 +834,7 @@ private extension ContentView {
                     text: $newItemText
                 )
                 .font(
-                    .system(size: 18)
+                    .system(size: 17)
                 )
                 .submitLabel(.done)
                 .focused(
@@ -811,15 +893,11 @@ private extension ContentView {
                     : "Set time"
             )
             .font(
-                .system(size: 16)
+                .system(size: 15)
             )
             .foregroundStyle(
                 hasSelectedTime
-                    ? Color(
-                        red: 0.25,
-                        green: 0.48,
-                        blue: 0.39
-                    )
+                    ? Color.accentGreen
                     : Color.secondary
             )
             .padding(
@@ -835,11 +913,7 @@ private extension ContentView {
                 Capsule()
                     .fill(
                         hasSelectedTime
-                            ? Color(
-                                red: 0.92,
-                                green: 0.96,
-                                blue: 0.94
-                            )
+                            ? Color.accentSoft
                             : Color(
                                 .systemGray6
                             )
@@ -859,15 +933,11 @@ private extension ContentView {
 
             Text("Every day")
                 .font(
-                    .system(size: 16)
+                    .system(size: 15)
                 )
                 .foregroundStyle(
                     repeatEveryDay
-                        ? Color(
-                            red: 0.25,
-                            green: 0.48,
-                            blue: 0.39
-                        )
+                        ? Color.accentGreen
                         : Color.secondary
                 )
                 .padding(
@@ -883,11 +953,7 @@ private extension ContentView {
                     Capsule()
                         .fill(
                             repeatEveryDay
-                                ? Color(
-                                    red: 0.92,
-                                    green: 0.96,
-                                    blue: 0.94
-                                )
+                                ? Color.accentSoft
                                 : Color(
                                     .systemGray6
                                 )
@@ -941,7 +1007,15 @@ private extension ContentView {
                         : nil,
                 checked: false,
                 repeatsDaily:
+                    repeatEveryDay,
+
+                // A one-off task belongs to the day it was made, so it can
+                // fall into Overdue once that day passes. Repeating tasks are
+                // regenerated daily and never carry a date.
+                scheduledDate:
                     repeatEveryDay
+                    ? nil
+                    : Calendar.current.startOfDay(for: Date())
             )
 
         modelContext.insert(
@@ -1010,22 +1084,23 @@ private extension ContentView {
             Text("Lists")
                 .font(
                     .system(
-                        size: 17,
+                        size: 16,
                         weight: .semibold
                     )
                 )
                 .foregroundStyle(
                     .secondary
                 )
-                .padding(.top, 25)
-                .padding(.bottom, 18)
+                .padding(.top, 18)
+                .padding(.bottom, 8)
 
             ForEach(
                 lists
             ) { list in
 
                 ChecklistListRow(
-                    list: list
+                    list: list,
+                    navigationPath: $navigationPath
                 )
             }
         }
@@ -1051,7 +1126,7 @@ private extension ContentView {
             )
             .font(
                 .system(
-                    size: 25,
+                    size: 23,
                     weight: .medium
                 )
             )
@@ -1061,11 +1136,7 @@ private extension ContentView {
                 height: 64
             )
             .background(
-                Color(
-                    red: 0.12,
-                    green: 0.42,
-                    blue: 0.31
-                )
+                Color.accentGreen
             )
             .clipShape(
                 Circle()

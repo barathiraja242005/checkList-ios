@@ -58,11 +58,7 @@ struct ChecklistListItemRow: View {
                     )
                     .fill(
                         item.checked
-                            ? Color(
-                                red: 0.18,
-                                green: 0.48,
-                                blue: 0.36
-                            )
+                            ? Color.accentGreen
                             : Color.clear
                     )
                 }
@@ -75,7 +71,7 @@ struct ChecklistListItemRow: View {
                         )
                         .font(
                             .system(
-                                size: 11,
+                                size: 10,
                                 weight: .bold
                             )
                         )
@@ -98,7 +94,7 @@ struct ChecklistListItemRow: View {
                     text: $item.text
                 )
                 .font(
-                    .system(size: 16)
+                    .system(size: 15)
                 )
                 .focused(
                     $isTextFieldFocused
@@ -122,7 +118,7 @@ struct ChecklistListItemRow: View {
 
                         Text(item.text)
                             .font(
-                                .system(size: 16)
+                                .system(size: 15)
                             )
                             .foregroundStyle(
                                 item.checked
@@ -152,7 +148,7 @@ struct ChecklistListItemRow: View {
                                         .minute()
                             )
                             .font(
-                                .system(size: 16)
+                                .system(size: 15)
                             )
                             .foregroundStyle(
                                 .secondary

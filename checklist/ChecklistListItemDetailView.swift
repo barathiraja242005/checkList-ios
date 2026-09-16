@@ -12,6 +12,7 @@ struct ChecklistListItemDetailView: View {
     private var modelContext
 
     @State private var showingTimePicker = false
+    @State private var showingDatePicker = false
     @State private var selectedTime = Date()
 
     // Kept so an emptied name can be restored rather than saved blank.
@@ -28,7 +29,7 @@ struct ChecklistListItemDetailView: View {
             content
             Spacer()
         }
-        .background(Color.white)
+        .pageBackground()
         .navigationBarBackButtonHidden(true)
         .backSwipe()
         
@@ -82,14 +83,14 @@ private extension ChecklistListItemDetailView {
                     )
                     .font(
                         .system(
-                            size: 13,
+                            size: 12,
                             weight: .medium
                         )
                     )
 
                     Text("List")
                         .font(
-                            .system(size: 17)
+                            .system(size: 16)
                         )
                 }
                 .foregroundStyle(
@@ -122,7 +123,7 @@ private extension ChecklistListItemDetailView {
             )
             .font(
                 .system(
-                    size: 29,
+                    size: 26,
                     weight: .bold
                 )
             )
@@ -148,25 +149,96 @@ private extension ChecklistListItemDetailView {
 
 private extension ChecklistListItemDetailView {
 
+    // Mirrors timeRow: a label with the value alongside, rather than the
+    // system DatePicker's own pill, so the date reads as "Sep 13, 2026"
+    // everywhere instead of switching to "9/13/2026" here.
     var dateRow: some View {
-        DatePicker(
-            "Date",
-            selection: dateBinding,
-            in: earliestSelectableDate...,
-            displayedComponents: [.date]
-        )
-        .font(
-            .system(size: 16)
-        )
-        .frame(height: 48)
-        .overlay(
-            Rectangle()
-                .fill(
-                    Color(.systemGray5)
+
+        VStack(spacing: 0) {
+
+            Button {
+
+                withAnimation(
+                    .easeInOut(duration: 0.2)
+                ) {
+                    showingDatePicker.toggle()
+                }
+
+            } label: {
+
+                HStack {
+
+                    Text("Date")
+                        .font(
+                            .system(size: 15)
+                        )
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    if let scheduledDate =
+                        item.scheduledDate {
+
+                        Text(
+                            scheduledDate,
+                            format:
+                                .dateTime
+                                .day()
+                                .month(.abbreviated)
+                                .year()
+                        )
+                        .font(
+                            .system(size: 15)
+                        )
+                        .foregroundStyle(
+                            Color.accentGreen
+                        )
+
+                    } else {
+
+                        Text("Set date")
+                            .font(
+                                .system(size: 15)
+                            )
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(height: 48)
+                .overlay(
+                    Rectangle()
+                        .fill(
+                            Color(.systemGray5)
+                        )
+                        .frame(height: 1),
+                    alignment: .bottom
                 )
-                .frame(height: 1),
-            alignment: .bottom
-        )
+            }
+            .buttonStyle(.plain)
+
+            if showingDatePicker {
+
+                DatePicker(
+                    "",
+                    selection: dateBinding,
+                    in: earliestSelectableDate...,
+                    displayedComponents: [.date]
+                )
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+                .tint(
+                    Color.accentGreen
+                )
+                .padding(.vertical, 4)
+                .overlay(
+                    Rectangle()
+                        .fill(
+                            Color(.systemGray5)
+                        )
+                        .frame(height: 1),
+                    alignment: .bottom
+                )
+            }
+        }
     }
 
     // Scheduling is forward-looking, so today is the floor. An already
@@ -266,7 +338,7 @@ private extension ChecklistListItemDetailView {
 
                 Text("Time")
                     .font(
-                        .system(size: 16)
+                        .system(size: 15)
                     )
                     .foregroundStyle(
                         .primary
@@ -286,21 +358,17 @@ private extension ChecklistListItemDetailView {
                                 .minute()
                     )
                     .font(
-                        .system(size: 16)
+                        .system(size: 15)
                     )
                     .foregroundStyle(
-                        Color(
-                            red: 0.20,
-                            green: 0.48,
-                            blue: 0.37
-                        )
+                        Color.accentGreen
                     )
 
                 } else {
 
                     Text("Set time")
                         .font(
-                            .system(size: 16)
+                            .system(size: 15)
                         )
                         .foregroundStyle(
                             .secondary
@@ -418,7 +486,7 @@ private extension ChecklistListItemDetailView {
                         )
                     )
                     .font(
-                        .system(size: 16)
+                        .system(size: 15)
                     )
                     .foregroundStyle(
                         .primary
@@ -428,7 +496,7 @@ private extension ChecklistListItemDetailView {
 
                     Text("Remind me")
                         .font(
-                            .system(size: 16)
+                            .system(size: 15)
                         )
                         .foregroundStyle(
                             .primary
@@ -439,7 +507,7 @@ private extension ChecklistListItemDetailView {
                     reminderDescription
                 )
                 .font(
-                    .system(size: 12)
+                    .system(size: 11)
                 )
                 .foregroundStyle(
                     .secondary
@@ -458,11 +526,7 @@ private extension ChecklistListItemDetailView {
             )
             .labelsHidden()
             .tint(
-                Color(
-                    red: 0.20,
-                    green: 0.48,
-                    blue: 0.37
-                )
+                Color.accentGreen
             )
             .disabled(
                 !item.hasScheduledTime ||

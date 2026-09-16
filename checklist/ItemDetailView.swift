@@ -18,6 +18,7 @@ struct ItemDetailView: View {
     @State private var selectedTime = Date()
     @State private var showingRemoveSheet = false
     @State private var showingDeleteConfirmation = false
+    @State private var showingDatePicker = false
 
     // Kept so an emptied name can be restored rather than saved blank.
     @State private var nameBeforeEditing = ""
@@ -41,7 +42,7 @@ struct ItemDetailView: View {
 
             Spacer()
         }
-        .background(Color.white)
+        .pageBackground()
         .navigationBarBackButtonHidden(true)
         .backSwipe()
         .onAppear {
@@ -149,14 +150,14 @@ private extension ItemDetailView {
                     )
                     .font(
                         .system(
-                            size: 13,
+                            size: 12,
                             weight: .medium
                         )
                     )
 
                     Text("Today")
                         .font(
-                            .system(size: 17)
+                            .system(size: 16)
                         )
                 }
                 .foregroundStyle(.secondary)
@@ -189,7 +190,7 @@ private extension ItemDetailView {
             )
             .font(
                 .system(
-                    size: 29,
+                    size: 26,
                     weight: .bold
                 )
             )
@@ -203,12 +204,155 @@ private extension ItemDetailView {
             .padding(.top, 12)
             .padding(.bottom, 28)
 
+            dateRow
             timeRow
             everyDayRow
             reminderRow
             removeItemRow
         }
         .padding(.horizontal, 24)
+    }
+}
+
+// MARK: - Date
+
+private extension ItemDetailView {
+
+    // A repeating task is regenerated each day, so a fixed date would be
+    // meaningless for it; the row only applies to one-off tasks.
+    var dateRow: some View {
+
+        VStack(spacing: 0) {
+
+            Button {
+
+                withAnimation(
+                    .easeInOut(duration: 0.2)
+                ) {
+                    showingDatePicker.toggle()
+                }
+
+            } label: {
+
+                HStack {
+
+                    Text("Date")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    if let scheduledDate = item.scheduledDate {
+
+                        Text(
+                            scheduledDate,
+                            format:
+                                .dateTime
+                                .day()
+                                .month(.abbreviated)
+                                .year()
+                        )
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.accentGreen)
+
+                    } else {
+
+                        Text("No date")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(height: 48)
+                .overlay(
+                    Rectangle()
+                        .fill(Color(.systemGray5))
+                        .frame(height: 1),
+                    alignment: .bottom
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(item.repeatsDaily)
+            .opacity(
+                item.repeatsDaily
+                ? 0.5
+                : 1
+            )
+
+            if showingDatePicker {
+
+                VStack(spacing: 0) {
+
+                    DatePicker(
+                        "",
+                        selection: scheduledDateBinding,
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+                    .tint(Color.accentGreen)
+
+                    // Clearing the date leaves the task on Today
+                    // indefinitely, so it never turns up as overdue.
+                    Button {
+
+                        clearDate()
+
+                    } label: {
+
+                        Text("Clear date")
+                            .font(.system(size: 15))
+                            .foregroundStyle(Color.deleteRed)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(item.scheduledDate == nil)
+                    .opacity(
+                        item.scheduledDate == nil
+                        ? 0.4
+                        : 1
+                    )
+                }
+                .padding(.vertical, 4)
+                .overlay(
+                    Rectangle()
+                        .fill(Color(.systemGray5))
+                        .frame(height: 1),
+                    alignment: .bottom
+                )
+            }
+        }
+    }
+
+    var scheduledDateBinding: Binding<Date> {
+
+        Binding(
+            get: {
+                item.scheduledDate ?? Date()
+            },
+            set: { newDate in
+
+                item.scheduledDate =
+                    Calendar.current.startOfDay(
+                        for: newDate
+                    )
+
+                saveChanges()
+            }
+        )
+    }
+
+    func clearDate() {
+
+        item.scheduledDate = nil
+
+        withAnimation(
+            .easeInOut(duration: 0.2)
+        ) {
+            showingDatePicker = false
+        }
+
+        saveChanges()
     }
 }
 
@@ -230,7 +374,7 @@ private extension ItemDetailView {
             HStack {
 
                 Text("Time")
-                    .font(.system(size: 16))
+                    .font(.system(size: 15))
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -243,19 +387,15 @@ private extension ItemDetailView {
                             .hour()
                             .minute()
                     )
-                    .font(.system(size: 16))
+                    .font(.system(size: 15))
                     .foregroundStyle(
-                        Color(
-                            red: 0.20,
-                            green: 0.48,
-                            blue: 0.37
-                        )
+                        Color.accentGreen
                     )
 
                 } else {
 
                     Text("Set time")
-                        .font(.system(size: 16))
+                        .font(.system(size: 15))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -285,13 +425,13 @@ private extension ItemDetailView {
             ) {
 
                 Text("Every day")
-                    .font(.system(size: 16))
+                    .font(.system(size: 15))
                     .foregroundStyle(.primary)
 
                 Text(
                     "Off means it only sits on today's list."
                 )
-                .font(.system(size: 12))
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             }
 
@@ -331,11 +471,7 @@ private extension ItemDetailView {
             )
             .labelsHidden()
             .tint(
-                Color(
-                    red: 0.20,
-                    green: 0.48,
-                    blue: 0.37
-                )
+                Color.accentGreen
             )
         }
         .frame(minHeight: 60)
@@ -369,7 +505,7 @@ private extension ItemDetailView {
             HStack {
 
                 Text("Remove item")
-                    .font(.system(size: 16))
+                    .font(.system(size: 15))
                     .foregroundStyle(.red)
 
                 Spacer()
@@ -481,13 +617,13 @@ private extension ItemDetailView {
                                 .minute()
                         )
                     )
-                    .font(.system(size: 16))
+                    .font(.system(size: 15))
                     .foregroundStyle(.primary)
 
                 } else {
 
                     Text("Remind me")
-                        .font(.system(size: 16))
+                        .font(.system(size: 15))
                         .foregroundStyle(.primary)
                 }
 
@@ -498,7 +634,7 @@ private extension ItemDetailView {
                             ? "A notification every day at this time."
                             : "A one-time notification at this time."
                 )
-                .font(.system(size: 12))
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(
                     horizontal: false,
@@ -514,11 +650,7 @@ private extension ItemDetailView {
             )
             .labelsHidden()
             .tint(
-                Color(
-                    red: 0.20,
-                    green: 0.48,
-                    blue: 0.37
-                )
+                Color.accentGreen
             )
             .disabled(item.remindAt == nil)
         }

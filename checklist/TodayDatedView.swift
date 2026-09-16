@@ -97,7 +97,7 @@ struct TodayDatedView: View {
 
             itemsList
         }
-        .background(Color.white)
+        .pageBackground()
         .navigationBarBackButtonHidden(true)
         .backSwipe()
 
@@ -170,14 +170,14 @@ private extension TodayDatedView {
                     )
                     .font(
                         .system(
-                            size: 13,
+                            size: 12,
                             weight: .medium
                         )
                     )
 
                     Text("Today")
                         .font(
-                            .system(size: 17)
+                            .system(size: 16)
                         )
                 }
                 .foregroundStyle(.secondary)
@@ -209,7 +209,7 @@ private extension TodayDatedView {
         )
         .font(
             .system(
-                size: 28,
+                size: 25,
                 weight: .bold
             )
         )
@@ -302,7 +302,7 @@ private extension TodayDatedView {
                 )
                 .font(
                     .system(
-                        size: 12,
+                        size: 11,
                         weight: .medium
                     )
                 )
@@ -315,14 +315,14 @@ private extension TodayDatedView {
                 )
                 .font(
                     .system(
-                        size: 16,
+                        size: 15,
                         weight: .semibold
                     )
                 )
             }
             .foregroundStyle(
                 isSelected
-                ? Color.white
+                ? Color.appBackground
                 : Color.primary
             )
             .frame(
@@ -338,11 +338,7 @@ private extension TodayDatedView {
                         style: .continuous
                     )
                     .fill(
-                        Color(
-                            red: 0.12,
-                            green: 0.12,
-                            blue: 0.12
-                        )
+                        Color.primary
                     )
                 }
             }
@@ -363,7 +359,7 @@ private extension TodayDatedView {
             )
             .font(
                 .system(
-                    size: 15,
+                    size: 14,
                     weight: .semibold
                 )
             )
@@ -378,7 +374,7 @@ private extension TodayDatedView {
                 )
                 .font(
                     .system(
-                        size: 15,
+                        size: 14,
                         weight: .semibold
                     )
                 )
@@ -543,11 +539,7 @@ private extension TodayDatedView {
                         )
                         .fill(
                             item.checked
-                            ? Color(
-                                red: 0.18,
-                                green: 0.48,
-                                blue: 0.36
-                            )
+                            ? Color.accentGreen
                             : Color.clear
                         )
                     }
@@ -561,7 +553,7 @@ private extension TodayDatedView {
                             )
                             .font(
                                 .system(
-                                    size: 11,
+                                    size: 10,
                                     weight: .bold
                                 )
                             )
@@ -577,7 +569,7 @@ private extension TodayDatedView {
 
                 Text(item.text)
                     .font(
-                        .system(size: 16)
+                        .system(size: 15)
                     )
                     .foregroundStyle(
                         item.checked
@@ -605,7 +597,7 @@ private extension TodayDatedView {
                             .minute()
                     )
                     .font(
-                        .system(size: 16)
+                        .system(size: 15)
                     )
                     .foregroundStyle(.secondary)
                     .fixedSize()
@@ -650,7 +642,7 @@ private extension TodayDatedView {
                         text: $newItemText
                     )
                     .font(
-                        .system(size: 16)
+                        .system(size: 15)
                     )
                     .textFieldStyle(.plain)
                     .padding(
@@ -687,16 +679,12 @@ private extension TodayDatedView {
 
                                 Text("Every day")
                                     .font(
-                                        .system(size: 14)
+                                        .system(size: 13)
                                     )
                             }
                             .foregroundStyle(
                                 repeatEveryDay
-                                ? Color(
-                                    red: 0.20,
-                                    green: 0.48,
-                                    blue: 0.37
-                                )
+                                ? Color.accentGreen
                                 : .secondary
                             )
                         }
@@ -720,14 +708,10 @@ private extension TodayDatedView {
                                         .minute()
                                 )
                                 .font(
-                                    .system(size: 14)
+                                    .system(size: 13)
                                 )
                                 .foregroundStyle(
-                                    Color(
-                                        red: 0.20,
-                                        green: 0.48,
-                                        blue: 0.37
-                                    )
+                                    Color.accentGreen
                                 )
                             }
                             .buttonStyle(.plain)
@@ -742,7 +726,7 @@ private extension TodayDatedView {
 
                                 Text("Set time")
                                     .font(
-                                        .system(size: 14)
+                                        .system(size: 13)
                                     )
                                     .foregroundStyle(.secondary)
                             }
@@ -770,7 +754,7 @@ private extension TodayDatedView {
                         }
                         .font(
                             .system(
-                                size: 16,
+                                size: 15,
                                 weight: .semibold
                             )
                         )
@@ -782,11 +766,7 @@ private extension TodayDatedView {
                                 )
                                 .isEmpty
                             ? .secondary
-                            : Color(
-                                red: 0.20,
-                                green: 0.48,
-                                blue: 0.37
-                            )
+                            : Color.accentGreen
                         )
                         .disabled(
                             newItemText
@@ -817,15 +797,11 @@ private extension TodayDatedView {
 
                         Text("Add item")
                             .font(
-                                .system(size: 16)
+                                .system(size: 15)
                             )
                     }
                     .foregroundStyle(
-                        Color(
-                            red: 0.20,
-                            green: 0.48,
-                            blue: 0.37
-                        )
+                        Color.accentGreen
                     )
                     .frame(
                         maxWidth: .infinity,
@@ -1070,7 +1046,12 @@ private extension TodayDatedView {
                 position:
                     todayItems.count,
                 repeatsDaily:
+                    repeatEveryDay,
+
+                scheduledDate:
                     repeatEveryDay
+                    ? nil
+                    : Calendar.current.startOfDay(for: selectedDate)
             )
 
         modelContext.insert(

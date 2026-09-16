@@ -61,6 +61,10 @@ struct checklistApp: App {
         WindowGroup {
 
             ContentView()
+                // Pinned to light regardless of the device setting. The
+                // palette still resolves both appearances, so dropping this
+                // line is all it takes to follow the system again.
+                .preferredColorScheme(.light)
         }
         .modelContainer(container)
         .onChange(

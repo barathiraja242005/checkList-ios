@@ -5,11 +5,18 @@ struct NewListView: View {
 
     @Binding var navigationPath: NavigationPath
 
+    // Passing a list turns this screen into an editor for it; nil creates one.
+    var editingList: ChecklistList? = nil
+
     @Environment(\.modelContext)
     private var modelContext
 
     @State private var listName = ""
     @State private var selectedCategory = "Grocery"
+
+    private var isEditing: Bool {
+        editingList != nil
+    }
 
     private let categories = [
         "Grocery",
@@ -44,14 +51,14 @@ struct NewListView: View {
                         )
                         .font(
                             .system(
-                                size: 13,
+                                size: 12,
                                 weight: .medium
                             )
                         )
 
                         Text("Cancel")
                             .font(
-                                .system(size: 17)
+                                .system(size: 16)
                             )
                     }
                     .foregroundStyle(.secondary)
@@ -73,10 +80,14 @@ struct NewListView: View {
                     spacing: 0
                 ) {
 
-                    Text("New list")
+                    Text(
+                        isEditing
+                        ? "Edit list"
+                        : "New list"
+                    )
                         .font(
                             .system(
-                                size: 29,
+                                size: 26,
                                 weight: .bold
                             )
                         )
@@ -90,7 +101,7 @@ struct NewListView: View {
                         text: $listName
                     )
                     .font(
-                        .system(size: 24)
+                        .system(size: 22)
                     )
                     .textFieldStyle(.plain)
                     .padding(.bottom, 9)
@@ -108,7 +119,7 @@ struct NewListView: View {
                         "you've used before."
                     )
                     .font(
-                        .system(size: 16)
+                        .system(size: 15)
                     )
                     .foregroundStyle(.secondary)
                     .padding(.top, 10)
@@ -129,10 +140,14 @@ struct NewListView: View {
 
             } label: {
 
-                Text("Create list")
+                Text(
+                    isEditing
+                    ? "Save changes"
+                    : "Create list"
+                )
                     .font(
                         .system(
-                            size: 18,
+                            size: 17,
                             weight: .regular
                         )
                     )
@@ -142,11 +157,7 @@ struct NewListView: View {
                     )
                     .frame(height: 58)
                     .background(
-                        Color(
-                            red: 0.20,
-                            green: 0.48,
-                            blue: 0.37
-                        )
+                        Color.accentGreen
                     )
                     .clipShape(
                         RoundedRectangle(
@@ -176,7 +187,17 @@ struct NewListView: View {
             .padding(.top, 10)
             .padding(.bottom, 24)
         }
-        .background(Color.white)
+        .pageBackground()
+        .onAppear {
+
+            guard let editingList
+            else {
+                return
+            }
+
+            listName = editingList.title
+            selectedCategory = editingList.category
+        }
         .navigationBarBackButtonHidden(true)
         .backSwipe()
     }
@@ -224,12 +245,12 @@ private extension NewListView {
                     Text(category)
                         .font(
                             .system(
-                                size: 16
+                                size: 15
                             )
                         )
                         .foregroundStyle(
                             selectedCategory == category
-                            ? Color.white
+                            ? Color.appBackground
                             : Color.primary
                         )
                         .frame(
@@ -238,12 +259,8 @@ private extension NewListView {
                         .frame(height: 40)
                         .background(
                             selectedCategory == category
-                            ? Color(
-                                red: 0.15,
-                                green: 0.15,
-                                blue: 0.15
-                            )
-                            : Color.white
+                            ? Color.primary
+                            : Color.clear
                         )
                         .clipShape(
                             Capsule()
@@ -279,6 +296,28 @@ private extension NewListView {
             )
 
         guard !trimmedName.isEmpty else {
+            return
+        }
+
+        if let editingList {
+
+            editingList.title = trimmedName
+            editingList.category = selectedCategory
+
+            do {
+
+                try modelContext.save()
+
+                // Editing was pushed from the list, so just go back to it.
+                navigationPath.removeLast()
+
+            } catch {
+
+                print(
+                    "Failed to save list: \(error)"
+                )
+            }
+
             return
         }
 
