@@ -534,9 +534,25 @@ private extension ItemDetailView {
 
                 HStack(spacing: 4) {
 
-                    Text(item.recurrence.label)
-                        .font(.system(size: 15))
-                        .lineLimit(1)
+                    ZStack(alignment: .trailing) {
+
+                        // Every option, laid out invisibly, so the slot is
+                        // always as wide as the longest of them. Without it
+                        // the row resizes when the choice changes and the
+                        // new text is clipped until the animation settles.
+                        ForEach(
+                            Recurrence.allCases
+                        ) { option in
+
+                            Text(option.label)
+                                .font(.system(size: 15))
+                                .hidden()
+                        }
+
+                        Text(item.recurrence.label)
+                            .font(.system(size: 15))
+                            .lineLimit(1)
+                    }
 
                     Image(
                         systemName: "chevron.up.chevron.down"
