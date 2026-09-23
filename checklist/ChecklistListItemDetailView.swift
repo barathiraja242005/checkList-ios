@@ -162,21 +162,6 @@ private extension ChecklistListItemDetailView {
                 timeRow
                 reminderRow
             }
-            // Tapping any of these finishes the name edit at the same time,
-            // so the keyboard is gone before a picker opens instead of
-            // needing a tap of its own to dismiss.
-            .simultaneousGesture(
-                TapGesture()
-                    .onEnded {
-
-                        guard isNameFocused
-                        else {
-                            return
-                        }
-
-                        commitName()
-                    }
-            )
         }
         .padding(.horizontal, 24)
     }
@@ -194,6 +179,10 @@ private extension ChecklistListItemDetailView {
         VStack(spacing: 0) {
 
             Button {
+
+                if isNameFocused {
+                    commitName()
+                }
 
                 withAnimation(
                     .easeInOut(duration: 0.2)
@@ -365,6 +354,11 @@ private extension ChecklistListItemDetailView {
 
     var timeRow: some View {
         Button {
+
+            if isNameFocused {
+                commitName()
+            }
+
             selectedTime =
                 item.scheduledDate ?? Date()
 

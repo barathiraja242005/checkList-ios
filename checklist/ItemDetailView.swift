@@ -232,21 +232,6 @@ private extension ItemDetailView {
                 reminderRow
                 removeItemRow
             }
-            // Tapping any of these finishes the name edit at the same time,
-            // so the keyboard is gone before a picker opens instead of
-            // needing a tap of its own to dismiss.
-            .simultaneousGesture(
-                TapGesture()
-                    .onEnded {
-
-                        guard isNameFocused
-                        else {
-                            return
-                        }
-
-                        commitName()
-                    }
-            )
         }
         .padding(.horizontal, 24)
     }
@@ -329,6 +314,7 @@ private extension ItemDetailView {
                     DatePicker(
                         "",
                         selection: scheduledDateBinding,
+                        in: earliestSelectableDate...,
                         displayedComponents: [.date]
                     )
                     .datePickerStyle(.graphical)
@@ -366,6 +352,31 @@ private extension ItemDetailView {
                 )
             }
         }
+    }
+
+    // Nothing earlier than today can be chosen. A task already sitting on a
+    // past date keeps that date as the floor, so opening its picker shows
+    // where it actually is rather than silently dragging it forward. Same
+    // rule the list-item screen already used.
+    var earliestSelectableDate: Date {
+
+        let calendar = Calendar.current
+
+        let startOfToday = calendar.startOfDay(
+            for: Date()
+        )
+
+        guard let scheduledDate = item.scheduledDate
+        else {
+            return startOfToday
+        }
+
+        return min(
+            calendar.startOfDay(
+                for: scheduledDate
+            ),
+            startOfToday
+        )
     }
 
     var scheduledDateBinding: Binding<Date> {
@@ -557,6 +568,10 @@ private extension ItemDetailView {
         _ recurrence: Recurrence
     ) {
 
+        if isNameFocused {
+            commitName()
+        }
+
         let previous = item.recurrence
 
         guard recurrence != previous
@@ -603,6 +618,10 @@ private extension ItemDetailView {
     var removeItemRow: some View {
 
         Button {
+
+            if isNameFocused {
+                commitName()
+            }
 
             // "Just today" vs "future days" is only a real choice for a
             // repeating item; a one-off just goes.
@@ -808,6 +827,10 @@ private extension ItemDetailView {
                 item.reminderEnabled
             },
             set: { newValue in
+
+                if isNameFocused {
+                    commitName()
+                }
 
                 guard newValue
                 else {
