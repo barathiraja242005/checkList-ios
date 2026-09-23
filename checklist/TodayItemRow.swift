@@ -190,6 +190,17 @@ struct TodayItemRow: View {
 
             DailyCompletion.toggleToday(for: item)
 
+        } else if item.recurrence.advancesItsOwnDate,
+                  !item.checked {
+
+            // Finishing one of these does not close the task, it moves it on
+            // to the date it is next due.
+            item.advanceToNextOccurrence()
+
+            NotificationManager.scheduleReminder(
+                for: item
+            )
+
         } else {
 
             item.checked.toggle()

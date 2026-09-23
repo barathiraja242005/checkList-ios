@@ -5,6 +5,14 @@ struct ItemDetailView: View {
 
     @Bindable var item: TodayItem
 
+    // What the back button says, so it names the screen actually behind it.
+    var backTitle: String = "Today"
+
+    // Opened from Add reminder: the task is a blank draft, so it starts with
+    // Remind me already chosen and is thrown away again if it never gets a
+    // name.
+    var isNewReminder: Bool = false
+
     @Environment(\.dismiss)
     private var dismiss
 
@@ -52,7 +60,10 @@ struct ItemDetailView: View {
             isNameFocused = true
         }
         .onDisappear {
+
             commitName()
+
+            discardEmptyDraft()
         }
         .sheet(
             isPresented: $showingTimePicker
@@ -75,6 +86,8 @@ struct ItemDetailView: View {
                 onDone: {
 
                     item.remindAt = selectedTime
+
+                    scheduleIfNewReminder()
 
                     if item.reminderEnabled {
 
@@ -140,7 +153,7 @@ private extension ItemDetailView {
                         )
                     )
 
-                    Text("Today")
+                    Text(backTitle)
                         .font(
                             .system(size: 16)
                         )
@@ -212,7 +225,7 @@ private extension ItemDetailView {
             ) {
                 dateRow
                 timeRow
-                everyDayRow
+                recurrenceRow
                 reminderRow
                 removeItemRow
             }
@@ -359,6 +372,14 @@ private extension ItemDetailView {
                         for: newDate
                     )
 
+                // A date on its own still needs an hour to fire at.
+                if item.remindAt == nil {
+
+                    item.remindAt = Self.defaultReminderTime
+                }
+
+                scheduleIfNewReminder()
+
                 saveChanges()
             }
         )
@@ -433,11 +454,11 @@ private extension ItemDetailView {
     }
 }
 
-// MARK: - Every Day
+// MARK: - Recurrence
 
 private extension ItemDetailView {
 
-    var everyDayRow: some View {
+    var recurrenceRow: some View {
 
         HStack {
 
@@ -446,55 +467,63 @@ private extension ItemDetailView {
                 spacing: 3
             ) {
 
-                Text("Every day")
+                Text("Repeat")
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
 
-                Text(
-                    "Off means it only sits on today's list."
-                )
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                Text(item.recurrence.summary)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            Toggle(
-                "",
-                isOn: Binding(
-                    get: {
-                        item.repeatsDaily
-                    },
-                    set: { newValue in
+            Menu {
 
-                        if newValue {
+                ForEach(
+                    Recurrence.allCases
+                ) { option in
 
-                            item.repeatsDaily = true
-                            saveChanges()
+                    Button {
+
+                        apply(option)
+
+                    } label: {
+
+                        if option == item.recurrence {
+
+                            Label(
+                                option.label,
+                                systemImage: "checkmark"
+                            )
 
                         } else {
 
-                            item.repeatsDaily = false
-
-                            TodayItemRemoval.removeFutureOccurrences(
-                                for: item,
-                                occurrences: occurrences,
-                                context: modelContext
-                            )
-
-                            saveChanges()
+                            Text(option.label)
                         }
-
-                        NotificationManager.scheduleReminder(
-                            for: item
-                        )
                     }
+                }
+
+            } label: {
+
+                HStack(spacing: 4) {
+
+                    Text(item.recurrence.label)
+                        .font(.system(size: 15))
+
+                    Image(
+                        systemName: "chevron.up.chevron.down"
+                    )
+                    .font(
+                        .system(size: 11, weight: .semibold)
+                    )
+                }
+                .foregroundStyle(
+                    item.recurrence == .none
+                        ? Color.secondary
+                        : Color.accentGreen
                 )
-            )
-            .labelsHidden()
-            .tint(
-                Color.accentGreen
-            )
+            }
         }
         .frame(minHeight: 60)
         .overlay(
@@ -502,6 +531,48 @@ private extension ItemDetailView {
                 .fill(Color(.systemGray5))
                 .frame(height: 1),
             alignment: .bottom
+        )
+    }
+
+    func apply(
+        _ recurrence: Recurrence
+    ) {
+
+        let previous = item.recurrence
+
+        guard recurrence != previous
+        else {
+            return
+        }
+
+        // Leaving Daily behind means the days it had already booked ahead are
+        // no longer its to keep.
+        if previous == .daily {
+
+            TodayItemRemoval.removeFutureOccurrences(
+                for: item,
+                occurrences: occurrences,
+                context: modelContext
+            )
+
+            item.completedThrough = nil
+        }
+
+        item.recurrence = recurrence
+
+        // Every interval but daily is anchored to a date, so one is needed
+        // before the repeat means anything.
+        if recurrence.advancesItsOwnDate,
+            item.scheduledDate == nil {
+
+            item.scheduledDate =
+                Calendar.current.startOfDay(for: Date())
+        }
+
+        saveChanges()
+
+        NotificationManager.scheduleReminder(
+            for: item
         )
     }
 }
@@ -648,13 +719,7 @@ private extension ItemDetailView {
                         .foregroundStyle(.primary)
                 }
 
-                Text(
-                    item.remindAt == nil
-                        ? "Set a time above to turn this on."
-                        : item.repeatsDaily
-                            ? "A notification every day at this time."
-                            : "A one-time notification at this time."
-                )
+                Text(reminderSummary)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(
@@ -667,8 +732,11 @@ private extension ItemDetailView {
 
             Toggle(
                 "",
-                isOn: reminderToggleBinding
+                isOn: hasSchedule
+                    ? reminderToggleBinding
+                    : .constant(isNewReminder)
             )
+            .disabled(!hasSchedule)
             .labelsHidden()
             .tint(
                 Color.accentGreen
@@ -682,6 +750,36 @@ private extension ItemDetailView {
                 .frame(height: 1),
             alignment: .bottom
         )
+    }
+
+    // A reminder needs a date or a time before it can fire, so until one of
+    // them is set the switch is shown but does nothing. On a new reminder it
+    // sits on, since turning it on is the whole point of the screen.
+    var hasSchedule: Bool {
+
+        item.remindAt != nil || item.scheduledDate != nil
+    }
+
+    var reminderSummary: String {
+
+        guard hasSchedule
+        else {
+            return "Set a date or time to turn this on."
+        }
+
+        guard item.remindAt != nil
+        else {
+            return "Set a time, or this fires at 10:00."
+        }
+
+        switch item.recurrence {
+
+        case .none:
+            return "A one-time notification at this time."
+
+        case .daily, .weekly, .biweekly, .monthly:
+            return "A notification \(item.recurrence.label.lowercased()) at this time."
+        }
     }
 
     var reminderToggleBinding: Binding<Bool> {
@@ -720,6 +818,71 @@ private extension ItemDetailView {
                 }
             }
         )
+    }
+}
+
+// MARK: - New Reminder
+
+private extension ItemDetailView {
+
+    // A date with no time of its own fires mid-morning rather than at
+    // whatever o'clock the screen happened to be opened.
+    static var defaultReminderTime: Date {
+
+        Calendar.current.date(
+            bySettingHour: 10,
+            minute: 0,
+            second: 0,
+            of: Date()
+        ) ?? Date()
+    }
+
+    // On a draft the switch is already showing as on, so the moment there is
+    // something to fire on it is made true rather than left as decoration.
+    func scheduleIfNewReminder() {
+
+        guard
+            isNewReminder,
+            !item.reminderEnabled,
+            hasSchedule
+        else {
+            return
+        }
+
+        NotificationManager.requestAuthorization { granted in
+
+            item.reminderEnabled = granted
+
+            if granted {
+
+                NotificationManager.scheduleReminder(
+                    for: item
+                )
+            }
+
+            saveChanges()
+        }
+    }
+
+    // A draft that never got a name is not a reminder, so it goes rather than
+    // leaving a nameless row behind.
+    func discardEmptyDraft() {
+
+        guard
+            isNewReminder,
+            !isRemoving,
+            item.text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ).isEmpty
+        else {
+            return
+        }
+
+        NotificationManager.cancelReminder(for: item)
+
+        modelContext.delete(item)
+
+        saveChanges()
     }
 }
 

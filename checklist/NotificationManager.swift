@@ -45,6 +45,7 @@ enum NotificationManager {
         content.sound = .default
 
         let calendar = Calendar.current
+
         var components = DateComponents()
 
         components.hour =
@@ -53,9 +54,57 @@ enum NotificationManager {
         components.minute =
             calendar.component(.minute, from: remindAt)
 
+        // Daily, weekly and monthly are shapes a calendar trigger can repeat
+        // on its own. A fortnight is not, so that one is booked as a single
+        // notification for its next date and rebooked when the task moves on.
+        var repeats = false
+
+        switch item.recurrence {
+
+        case .daily:
+
+            repeats = true
+
+        case .weekly:
+
+            if let scheduledDate = item.scheduledDate {
+
+                components.weekday =
+                    calendar.component(.weekday, from: scheduledDate)
+
+                repeats = true
+            }
+
+        case .monthly:
+
+            if let scheduledDate = item.scheduledDate {
+
+                components.day =
+                    calendar.component(.day, from: scheduledDate)
+
+                repeats = true
+            }
+
+        case .biweekly, .none:
+
+            // A dated task fires on its date rather than at the next time of
+            // day those hands come round.
+            if let scheduledDate = item.scheduledDate {
+
+                let day = calendar.dateComponents(
+                    [.year, .month, .day],
+                    from: scheduledDate
+                )
+
+                components.year = day.year
+                components.month = day.month
+                components.day = day.day
+            }
+        }
+
         let trigger = UNCalendarNotificationTrigger(
             dateMatching: components,
-            repeats: item.repeatsDaily
+            repeats: repeats
         )
 
         let request = UNNotificationRequest(

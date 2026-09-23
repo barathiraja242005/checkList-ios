@@ -29,6 +29,10 @@ final class TodayItem {
     // Tasks tab can show the next day that is still open.
     var completedThrough: Date?
 
+    // How often the task comes back, for the intervals longer than a day.
+    // Daily still rides on `repeatsDaily`; see Recurrence.
+    var recurrenceRaw: String = Recurrence.none.rawValue
+
     init(
         id: UUID = UUID(),
         text: String,
@@ -40,7 +44,8 @@ final class TodayItem {
         reminderEnabled: Bool = false,
         scheduledDate: Date? = nil,
         isLater: Bool = false,
-        completedThrough: Date? = nil
+        completedThrough: Date? = nil,
+        recurrenceRaw: String = Recurrence.none.rawValue
     ) {
         self.id = id
         self.text = text
@@ -53,5 +58,6 @@ final class TodayItem {
         self.scheduledDate = scheduledDate
         self.isLater = isLater
         self.completedThrough = completedThrough
+        self.recurrenceRaw = recurrenceRaw
     }
 }

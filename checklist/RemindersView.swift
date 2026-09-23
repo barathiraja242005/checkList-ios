@@ -11,6 +11,13 @@ struct RemindersView: View {
     @Query
     private var checklistItems: [ChecklistListItem]
 
+    @Environment(\.modelContext)
+    private var modelContext
+
+    // The blank task an Add reminder tap creates, held while its edit screen
+    // is open so it can be pushed onto the stack.
+    @State private var draft: TodayItem?
+
     // MARK: - Body
 
     var body: some View {
@@ -34,6 +41,8 @@ struct RemindersView: View {
 
                         reminderRows
                     }
+
+                    addReminderRow
                 }
                 // Keeps the column — and so the page background behind it —
                 // the full width of the screen even when it holds nothing
@@ -52,6 +61,17 @@ struct RemindersView: View {
                 maxHeight: .infinity
             )
             .pageBackground()
+
+            .navigationDestination(
+                item: $draft
+            ) { item in
+
+                ItemDetailView(
+                    item: item,
+                    backTitle: "Reminders",
+                    isNewReminder: true
+                )
+            }
         }
     }
 }
@@ -144,6 +164,16 @@ enum ReminderEntry: Identifiable {
                 on: item.scheduledDate ?? now
             )
 
+            // A weekly, fortnightly or monthly reminder always has another
+            // one coming, so it rolls forward rather than dropping off.
+            if item.recurrence.advancesItsOwnDate {
+
+                return item.recurrence.nextDate(
+                    onOrAfter: now,
+                    from: fire
+                )
+            }
+
             return fire > now ? fire : nil
 
         case .listItem(let item):
@@ -183,8 +213,8 @@ enum ReminderEntry: Identifiable {
 
         case .todayItem(let item):
 
-            if item.repeatsDaily {
-                return "Every day"
+            if item.recurrence != .none {
+                return item.recurrence.label
             }
 
             guard
@@ -426,7 +456,8 @@ private extension RemindersView {
         case .todayItem(let item):
 
             ItemDetailView(
-                item: item
+                item: item,
+                backTitle: "Reminders"
             )
 
         case .listItem(let item):
@@ -435,6 +466,48 @@ private extension RemindersView {
                 item: item
             )
         }
+    }
+
+    // Adding a reminder is adding a task that happens to start on the edit
+    // screen, with the switch already chosen and waiting on a date or time.
+    var addReminderRow: some View {
+
+        Button {
+
+            let newItem = TodayItem(text: "")
+
+            modelContext.insert(newItem)
+
+            draft = newItem
+
+        } label: {
+
+            HStack(spacing: 18) {
+
+                Text("+")
+                    .font(
+                        .system(size: 19)
+                    )
+                    .foregroundStyle(
+                        Color.accentGreen
+                    )
+
+                Text("Add reminder")
+                    .font(
+                        .system(
+                            size: 15,
+                            weight: .medium
+                        )
+                    )
+                    .foregroundStyle(
+                        Color.accentGreen
+                    )
+
+                Spacer()
+            }
+            .frame(height: 58)
+        }
+        .buttonStyle(.plain)
     }
 
     var emptyState: some View {
