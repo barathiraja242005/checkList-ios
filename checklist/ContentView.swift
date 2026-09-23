@@ -82,6 +82,10 @@ struct ContentView: View {
                 .padding(.bottom, 60)
             }
             .scrollIndicators(.hidden)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                dismissComposerIfEmpty()
+            }
             .pageBackground()
 
             // Leaving the screen abandons a half-started item, so the
@@ -750,15 +754,18 @@ private extension ContentView {
                         .system(size: 19)
                     )
                     .foregroundStyle(
-                        .secondary
+                        Color.accentGreen
                     )
 
                 Text("Add item")
                     .font(
-                        .system(size: 15)
+                        .system(
+                            size: 15,
+                            weight: .medium
+                        )
                     )
                     .foregroundStyle(
-                        .secondary
+                        Color.accentGreen
                     )
 
                 Spacer()
@@ -784,7 +791,7 @@ private extension ContentView {
                         .system(size: 19)
                     )
                     .foregroundStyle(
-                        .secondary
+                        Color.accentGreen
                     )
 
                 TextField(
@@ -925,6 +932,25 @@ private extension ContentView {
 // MARK: - Add Today Item
 
 private extension ContentView {
+
+    // Tapping away from a composer with nothing typed in it closes it;
+    // anything already typed is left alone rather than thrown away.
+    func dismissComposerIfEmpty() {
+
+        guard isAddingItem
+        else {
+            return
+        }
+
+        guard newItemText.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty
+        else {
+            return
+        }
+
+        cancelAddItem()
+    }
 
     func cancelAddItem() {
 

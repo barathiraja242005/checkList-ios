@@ -30,10 +30,10 @@ extension Color {
         )
     }
 
-    // #F2F8F5 light, #101614 dark — the dark side keeps a green cast rather
+    // #E4EFE8 light, #101614 dark — the dark side keeps a green cast rather
     // than going neutral black, so both appearances share a family.
     static let appBackground = adaptive(
-        light: (0.949, 0.973, 0.961),
+        light: (0.894, 0.937, 0.910),
         dark: (0.063, 0.086, 0.078)
     )
 

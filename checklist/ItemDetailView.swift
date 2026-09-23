@@ -186,14 +186,51 @@ private extension ItemDetailView {
             .onSubmit {
                 commitName()
             }
+            // A vertical-axis field takes Return as a line break rather than
+            // a submit, so the newline is caught here and turned into the
+            // end of editing: keyboard away, page stays put.
+            .onChange(of: item.text) { _, newValue in
+
+                guard newValue.contains("\n")
+                else {
+                    return
+                }
+
+                item.text = newValue.replacingOccurrences(
+                    of: "\n",
+                    with: ""
+                )
+
+                commitName()
+            }
             .padding(.top, 12)
             .padding(.bottom, 28)
 
-            dateRow
-            timeRow
-            everyDayRow
-            reminderRow
-            removeItemRow
+            VStack(
+                alignment: .leading,
+                spacing: 0
+            ) {
+                dateRow
+                timeRow
+                everyDayRow
+                reminderRow
+                removeItemRow
+            }
+            // Tapping any of these finishes the name edit at the same time,
+            // so the keyboard is gone before a picker opens instead of
+            // needing a tap of its own to dismiss.
+            .simultaneousGesture(
+                TapGesture()
+                    .onEnded {
+
+                        guard isNameFocused
+                        else {
+                            return
+                        }
+
+                        commitName()
+                    }
+            )
         }
         .padding(.horizontal, 24)
     }

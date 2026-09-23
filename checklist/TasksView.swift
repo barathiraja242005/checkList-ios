@@ -35,6 +35,14 @@ struct TasksView: View {
     @AppStorage("tasksShowsCompleted")
     private var showsCompleted = false
 
+    // MARK: - Add Item State
+
+    @State private var isAddingItem = false
+    @State private var newItemText = ""
+
+    @FocusState
+    private var isNewItemFieldFocused: Bool
+
     // MARK: - Body
 
     var body: some View {
@@ -64,6 +72,15 @@ struct TasksView: View {
                         openRows
                     }
 
+                    if isAddingItem {
+
+                        addItemComposer
+
+                    } else {
+
+                        addItemRow
+                    }
+
                     if showsCompleted {
 
                         completedSection
@@ -81,11 +98,21 @@ struct TasksView: View {
                 .padding(.bottom, 60)
             }
             .scrollIndicators(.hidden)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                dismissComposerIfEmpty()
+            }
             .frame(
                 maxWidth: .infinity,
                 maxHeight: .infinity
             )
             .pageBackground()
+
+            // Leaving the tab abandons a half-started task rather than
+            // leaving the composer open for the next visit.
+            .onDisappear {
+                cancelAddItem()
+            }
         }
     }
 }
@@ -270,6 +297,88 @@ private extension TasksView {
         }
     }
 
+    // No time or repeat chips here: a task added from this tab is just a
+    // line of text, and its detail screen is where a time or a repeat gets
+    // added.
+    var addItemRow: some View {
+
+        Button {
+
+            isAddingItem = true
+            newItemText = ""
+            isNewItemFieldFocused = true
+
+        } label: {
+
+            HStack(spacing: 18) {
+
+                Text("+")
+                    .font(
+                        .system(size: 19)
+                    )
+                    .foregroundStyle(
+                        Color.accentGreen
+                    )
+
+                Text("Add item")
+                    .font(
+                        .system(
+                            size: 15,
+                            weight: .medium
+                        )
+                    )
+                    .foregroundStyle(
+                        Color.accentGreen
+                    )
+
+                Spacer()
+            }
+            .frame(height: 58)
+        }
+        .buttonStyle(.plain)
+    }
+
+    var addItemComposer: some View {
+
+        HStack(spacing: 18) {
+
+            Text("+")
+                .font(
+                    .system(size: 19)
+                )
+                .foregroundStyle(
+                    Color.accentGreen
+                )
+
+            TextField(
+                "Add item",
+                text: $newItemText
+            )
+            .font(
+                .system(size: 17)
+            )
+            .submitLabel(.done)
+            .focused(
+                $isNewItemFieldFocused
+            )
+            .onSubmit {
+
+                addItem()
+            }
+        }
+        .frame(height: 53)
+        .overlay(
+            alignment: .bottom
+        ) {
+
+            Rectangle()
+                .fill(
+                    Color(.systemGray5)
+                )
+                .frame(height: 1)
+        }
+    }
+
     var emptyState: some View {
 
         VStack(
@@ -426,7 +535,9 @@ private extension TasksView {
             }
         }
         .padding(.leading, 2)
-        .padding(.vertical, 7)
+        // Matches the breathing room under the open rows above.
+        .padding(.top, 7)
+        .padding(.bottom, 10)
         .frame(minHeight: 47)
         .overlay(
             Rectangle()
@@ -436,6 +547,76 @@ private extension TasksView {
                 .frame(height: 1),
             alignment: .bottom
         )
+    }
+}
+
+// MARK: - Add Task
+
+private extension TasksView {
+
+    // Tapping away from a composer with nothing typed in it closes it;
+    // anything already typed is left alone rather than thrown away.
+    func dismissComposerIfEmpty() {
+
+        guard isAddingItem
+        else {
+            return
+        }
+
+        guard newItemText.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty
+        else {
+            return
+        }
+
+        cancelAddItem()
+    }
+
+    func cancelAddItem() {
+
+        guard isAddingItem
+        else {
+            return
+        }
+
+        isNewItemFieldFocused = false
+        isAddingItem = false
+        newItemText = ""
+    }
+
+    func addItem() {
+
+        let trimmedText =
+            newItemText.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !trimmedText.isEmpty
+        else {
+
+            isAddingItem = false
+            return
+        }
+
+        // Left undated: a task added here is something to do, not something
+        // pinned to a day. Without a date it stays open rather than ageing
+        // into Overdue, and a day can be set from its detail screen.
+        let newItem = TodayItem(
+            text: trimmedText
+        )
+
+        modelContext.insert(newItem)
+
+        TodayItemOrdering.insertChronologically(
+            newItem,
+            into: todayItems
+        )
+
+        saveChanges()
+
+        newItemText = ""
+        isAddingItem = false
     }
 }
 

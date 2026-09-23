@@ -123,7 +123,7 @@ struct TodayItemRow: View {
                             color: .secondary
                         )
 
-                    if showsDate {
+                    if showsDate, let dateLabel {
 
                         Text(dateLabel)
                             .font(
@@ -158,8 +158,14 @@ struct TodayItemRow: View {
         }
         .padding(.leading, 2)
         // Vertical padding stays inside the 58pt minimum for a single-line
-        // title, so only wrapped titles actually grow the row.
-        .padding(.vertical, 7)
+        // title, so only wrapped titles actually grow the row. A row carrying
+        // a date underneath gets more room below it, so the second line is
+        // not sitting on the separator.
+        .padding(.top, 7)
+        .padding(
+            .bottom,
+            showsDate && dateLabel != nil ? 10 : 7
+        )
         .frame(minHeight: 46)
     }
 
@@ -195,9 +201,9 @@ struct TodayItemRow: View {
     // MARK: - Date
 
     // A repeat carries no date of its own, so it shows the next day it is
-    // actually due: today until today's is dealt with, then tomorrow. A
-    // parked task has no date at all and says so.
-    private var dateLabel: String {
+    // actually due: today until today's is dealt with, then tomorrow. A task
+    // with no date shows no second line at all.
+    private var dateLabel: String? {
 
         if item.repeatsDaily {
             return DailyCompletion.dayLabel(
@@ -207,7 +213,7 @@ struct TodayItemRow: View {
 
         guard let scheduledDate = item.scheduledDate
         else {
-            return "No date"
+            return nil
         }
 
         return DailyCompletion.dayLabel(for: scheduledDate)

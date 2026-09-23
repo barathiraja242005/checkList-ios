@@ -399,7 +399,10 @@ private extension RemindersView {
                 }
             }
             .padding(.leading, 2)
-            .padding(.vertical, 7)
+            // Same breathing room under a row as the Tasks tab, so the line
+            // beneath the title is not sitting on the separator.
+            .padding(.top, 7)
+            .padding(.bottom, 10)
             .frame(minHeight: 47)
             .overlay(
                 Rectangle()
