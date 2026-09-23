@@ -686,9 +686,9 @@ private extension ItemDetailView {
                 commitName()
             }
 
-            // "Just today" vs "future days" is only a real choice for a
-            // repeating item; a one-off just goes.
-            if item.repeatsDaily {
+            // Dropping one occurrence versus the whole routine is only a
+            // real choice for something that repeats; a one-off just goes.
+            if item.recurrence != .none {
                 showingRemoveSheet = true
             } else {
                 deleteOneTimeItem()
@@ -718,6 +718,7 @@ private extension ItemDetailView {
 
         RemoveItemSheet(
             itemText: item.text,
+            recurrence: item.recurrence,
             onJustToday: {
                 removeJustToday()
             },

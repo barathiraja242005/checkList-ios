@@ -3,6 +3,10 @@ import SwiftUI
 struct RemoveItemSheet: View {
 
     let itemText: String
+
+    // Drives the wording: what "just one" means depends on how often the
+    // task comes back.
+    var recurrence: Recurrence = .daily
     let onJustToday: () -> Void
     let onTodayAndFuture: () -> Void
     let onCancel: () -> Void
@@ -50,8 +54,8 @@ struct RemoveItemSheet: View {
                 optionRow(
                     icon: "arrow.uturn.forward",
                     iconTint: accent,
-                    title: "Just today",
-                    subtitle: "Comes back tomorrow.",
+                    title: recurrence.skipTitle,
+                    subtitle: recurrence.skipSummary,
                     titleColor: .primary,
                     action: onJustToday
                 )
@@ -62,7 +66,7 @@ struct RemoveItemSheet: View {
                 optionRow(
                     icon: "trash",
                     iconTint: .red,
-                    title: "Today and future days",
+                    title: recurrence.removeAllTitle,
                     subtitle: "Removes it from your routine.",
                     titleColor: .red,
                     action: onTodayAndFuture

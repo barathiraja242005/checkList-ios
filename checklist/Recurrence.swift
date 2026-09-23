@@ -39,6 +39,33 @@ enum Recurrence: String, CaseIterable, Identifiable {
         }
     }
 
+    // Wording for the remove sheet, which offers to drop one occurrence or
+    // the whole routine.
+    var skipTitle: String {
+
+        self == .daily
+            ? "Just today"
+            : "Just this one"
+    }
+
+    var skipSummary: String {
+
+        switch self {
+        case .none: return ""
+        case .daily: return "Comes back tomorrow."
+        case .weekly: return "Comes back next week."
+        case .biweekly: return "Comes back in a fortnight."
+        case .monthly: return "Comes back next month."
+        }
+    }
+
+    var removeAllTitle: String {
+
+        self == .daily
+            ? "Today and future days"
+            : "This and all future"
+    }
+
     // Daily is handled by the rollover rather than by moving a date along.
     var advancesItsOwnDate: Bool {
 

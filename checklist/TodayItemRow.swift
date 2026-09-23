@@ -52,6 +52,7 @@ struct TodayItemRow: View {
         ) {
             RemoveItemSheet(
                 itemText: item.text,
+                recurrence: item.recurrence,
                 onJustToday: {
                     TodayItemRemoval.removeJustToday(
                         item,
@@ -234,7 +235,7 @@ struct TodayItemRow: View {
 
     private func handleDelete() {
 
-        if item.repeatsDaily {
+        if item.recurrence != .none {
 
             showingRemoveSheet = true
 

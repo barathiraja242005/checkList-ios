@@ -17,6 +17,14 @@ enum TodayItemRemoval {
                     for: Date()
                 )
 
+        } else if item.recurrence.advancesItsOwnDate {
+
+            // Nothing to skip against on these — dropping this one simply
+            // moves the task on to the date it is next due.
+            item.advanceToNextOccurrence()
+
+            NotificationManager.scheduleReminder(for: item)
+
         } else {
 
             NotificationManager.cancelReminder(for: item)

@@ -13,6 +13,10 @@ struct OverdueTodayItemRow: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var navigateToDetail = false
+    @State private var showingRemoveSheet = false
+
+    @Query
+    private var occurrences: [Occurrence]
 
     var body: some View {
 
@@ -24,7 +28,7 @@ struct OverdueTodayItemRow: View {
                 navigateToDetail = true
             },
             onDelete: {
-                deleteItem()
+                handleDelete()
             }
         )
         .navigationDestination(
@@ -33,6 +37,40 @@ struct OverdueTodayItemRow: View {
             ItemDetailView(
                 item: item
             )
+        }
+
+        // A repeat that has fallen behind is still a repeat, so removing it
+        // asks the same question it would on the day itself.
+        .sheet(
+            isPresented: $showingRemoveSheet
+        ) {
+            RemoveItemSheet(
+                itemText: item.text,
+                recurrence: item.recurrence,
+                onJustToday: {
+                    TodayItemRemoval.removeJustToday(
+                        item,
+                        context: modelContext
+                    )
+
+                    showingRemoveSheet = false
+                },
+                onTodayAndFuture: {
+                    TodayItemRemoval.removeTodayAndFuture(
+                        item,
+                        occurrences: occurrences,
+                        context: modelContext
+                    )
+
+                    showingRemoveSheet = false
+                },
+                onCancel: {
+                    showingRemoveSheet = false
+                }
+            )
+            .presentationDetents([.height(290)])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.appBackground)
         }
     }
 
@@ -145,6 +183,18 @@ struct OverdueTodayItemRow: View {
         }
 
         save()
+    }
+
+    private func handleDelete() {
+
+        if item.recurrence != .none {
+
+            showingRemoveSheet = true
+
+        } else {
+
+            deleteItem()
+        }
     }
 
     private func deleteItem() {
