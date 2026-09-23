@@ -45,9 +45,12 @@ struct ItemDetailView: View {
 
             header
 
-            content
+            ScrollView {
 
-            Spacer()
+                content
+            }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
         }
         .pageBackground()
         .navigationBarBackButtonHidden(true)
@@ -261,6 +264,12 @@ private extension ItemDetailView {
 
             Button {
 
+                // Without this the keyboard stays up over the calendar that
+                // is about to open, and the date looks unselectable.
+                if isNameFocused {
+                    commitName()
+                }
+
                 withAnimation(
                     .easeInOut(duration: 0.2)
                 ) {
@@ -407,6 +416,10 @@ private extension ItemDetailView {
 
         Button {
 
+            if isNameFocused {
+                commitName()
+            }
+
             selectedTime =
                 item.remindAt ?? Date()
 
@@ -474,9 +487,11 @@ private extension ItemDetailView {
                 Text(item.recurrence.summary)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
 
-            Spacer()
+            Spacer(minLength: 12)
 
             Menu {
 
@@ -510,6 +525,7 @@ private extension ItemDetailView {
 
                     Text(item.recurrence.label)
                         .font(.system(size: 15))
+                        .lineLimit(1)
 
                     Image(
                         systemName: "chevron.up.chevron.down"
@@ -518,6 +534,9 @@ private extension ItemDetailView {
                         .system(size: 11, weight: .semibold)
                     )
                 }
+                // Never squeezed into an ellipsis by the label beside it.
+                .fixedSize()
+                .layoutPriority(1)
                 .foregroundStyle(
                     item.recurrence == .none
                         ? Color.secondary
