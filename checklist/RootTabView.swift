@@ -7,6 +7,20 @@ struct RootTabView: View {
 
     var body: some View {
 
+        ZStack {
+
+            // Painted behind every tab: switching tabs hands the new one a
+            // moment before its own background is up, and without this that
+            // moment reads as a white flash under the tab bar.
+            Color.appBackground
+                .ignoresSafeArea()
+
+            deck
+        }
+    }
+
+    private var deck: some View {
+
         TabView {
 
             Tab(

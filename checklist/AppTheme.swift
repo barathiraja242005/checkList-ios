@@ -95,7 +95,12 @@ extension View {
         _ color: Color = .appBackground
     ) -> some View {
 
-        background(color)
-            .environment(\.pageBackground, color)
+        // Ignoring the safe area matters as much as the colour: clipped to
+        // its bounds the fill stops short of the floating tab bar, leaving
+        // the system's own white to show through underneath it.
+        background(
+            color.ignoresSafeArea()
+        )
+        .environment(\.pageBackground, color)
     }
 }
