@@ -147,7 +147,13 @@ enum ReminderEntry: Identifiable {
                     on: now
                 )
 
-                guard todayFire <= now
+                // Today's is gone if it has already fired, and equally if the
+                // day was dropped from the list.
+                let settledForToday =
+                    todayFire <= now
+                    || DailyCompletion.isSkipped(item, on: now)
+
+                guard settledForToday
                 else {
                     return todayFire
                 }

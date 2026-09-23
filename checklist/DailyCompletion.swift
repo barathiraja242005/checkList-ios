@@ -27,8 +27,13 @@ enum DailyCompletion {
         let calendar = Calendar.current
         let today = day(now)
 
+        // Today is settled either by being done or by being dropped for the
+        // day; either way the next one lands tomorrow.
+        let settledForToday =
+            item.checked || isSkipped(item, on: today)
+
         var candidate =
-            item.checked
+            settledForToday
             ? calendar.date(
                 byAdding: .day,
                 value: 1,
@@ -54,6 +59,21 @@ enum DailyCompletion {
         }
 
         return candidate
+    }
+
+    // A day dropped from Today with "just today". Not the same as finished —
+    // it never counts as a completion — but it does settle the day.
+    static func isSkipped(
+        _ item: TodayItem,
+        on date: Date
+    ) -> Bool {
+
+        guard let skippedDate = item.skippedDate
+        else {
+            return false
+        }
+
+        return day(skippedDate) == day(date)
     }
 
     // Days already closed that have not yet rolled into history: today's, and
