@@ -140,32 +140,73 @@ private extension ItemDetailView {
 
         HStack {
 
-            Button {
-                dismiss()
-            } label: {
+            if isNewReminder {
 
-                HStack(spacing: 4) {
+                Button {
+                    cancelDraft()
+                } label: {
 
-                    Image(
-                        systemName: "chevron.left"
-                    )
-                    .font(
-                        .system(
-                            size: 12,
-                            weight: .medium
-                        )
-                    )
-
-                    Text(backTitle)
+                    Text("Cancel")
                         .font(
                             .system(size: 16)
                         )
+                        .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
+                .buttonStyle(.plain)
 
-            Spacer()
+                Spacer()
+
+                Button {
+                    saveDraft()
+                } label: {
+
+                    Text("Save")
+                        .font(
+                            .system(
+                                size: 16,
+                                weight: .semibold
+                            )
+                        )
+                        .foregroundStyle(
+                            hasName
+                                ? Color.accentGreen
+                                : Color.secondary
+                        )
+                }
+                .buttonStyle(.plain)
+                // A reminder with no name is not one, so there is nothing
+                // to save until it has been given one.
+                .disabled(!hasName)
+
+            } else {
+
+                Button {
+                    dismiss()
+                } label: {
+
+                    HStack(spacing: 4) {
+
+                        Image(
+                            systemName: "chevron.left"
+                        )
+                        .font(
+                            .system(
+                                size: 12,
+                                weight: .medium
+                            )
+                        )
+
+                        Text(backTitle)
+                            .font(
+                                .system(size: 16)
+                            )
+                    }
+                    .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+            }
         }
         .padding(.horizontal, 24)
         .padding(.top, 14)
@@ -230,7 +271,13 @@ private extension ItemDetailView {
                 timeRow
                 recurrenceRow
                 reminderRow
-                removeItemRow
+
+                // A draft is cancelled from the header; there is nothing
+                // yet to remove.
+                if !isNewReminder {
+
+                    removeItemRow
+                }
             }
         }
         .padding(.horizontal, 24)
@@ -920,6 +967,43 @@ private extension ItemDetailView {
 
             saveChanges()
         }
+    }
+
+    var hasName: Bool {
+
+        !item.text.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty
+    }
+
+    func cancelDraft() {
+
+        isRemoving = true
+        isNameFocused = false
+
+        NotificationManager.cancelReminder(for: item)
+
+        modelContext.delete(item)
+
+        saveChanges()
+
+        dismiss()
+    }
+
+    func saveDraft() {
+
+        commitName()
+
+        if item.reminderEnabled {
+
+            NotificationManager.scheduleReminder(
+                for: item
+            )
+        }
+
+        saveChanges()
+
+        dismiss()
     }
 
     // A draft that never got a name is not a reminder, so it goes rather than
