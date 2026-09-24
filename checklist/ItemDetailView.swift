@@ -448,6 +448,14 @@ private extension ItemDetailView {
                 scheduleIfNewReminder()
 
                 saveChanges()
+
+                // The choice is made, so the calendar folds away rather than
+                // sitting open over the rest of the screen.
+                withAnimation(
+                    .easeInOut(duration: 0.2)
+                ) {
+                    showingDatePicker = false
+                }
             }
         )
     }

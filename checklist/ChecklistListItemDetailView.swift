@@ -343,6 +343,13 @@ private extension ChecklistListItemDetailView {
                         for: item
                     )
                 }
+
+                // Folds away once a day is chosen, same as the task screen.
+                withAnimation(
+                    .easeInOut(duration: 0.2)
+                ) {
+                    showingDatePicker = false
+                }
             }
         )
     }
