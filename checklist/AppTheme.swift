@@ -30,10 +30,12 @@ extension Color {
         )
     }
 
-    // #E4EFE8 light, #101614 dark — the dark side keeps a green cast rather
-    // than going neutral black, so both appearances share a family.
+    // #EDF4EF light, #101614 dark — the dark side keeps a green cast rather
+    // than going neutral black, so both appearances share a family. The light
+    // side sits between the near-white it started as and the fuller green it
+    // briefly became: read as a tint, not as a wash of colour.
     static let appBackground = adaptive(
-        light: (0.894, 0.937, 0.910),
+        light: (0.929, 0.957, 0.937),
         dark: (0.063, 0.086, 0.078)
     )
 
@@ -68,6 +70,13 @@ extension Color {
     static let accentSoft = adaptive(
         light: (0.920, 0.960, 0.940),
         dark: (0.145, 0.235, 0.190)
+    )
+
+    // The track a segmented switch sits in: a shade off the page rather than
+    // a grey block dropped onto it.
+    static let controlTrack = adaptive(
+        light: (0.878, 0.918, 0.894),
+        dark: (0.145, 0.180, 0.163)
     )
 }
 

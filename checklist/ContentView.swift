@@ -70,7 +70,7 @@ struct ContentView: View {
 
                     header
 
-                    TaskFilterChips(
+                    TaskFilterToggle(
                         showsCompleted: $showsCompleted
                     )
                     .padding(.top, 16)
