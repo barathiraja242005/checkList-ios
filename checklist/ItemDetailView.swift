@@ -302,6 +302,20 @@ private extension ItemDetailView {
                     commitName()
                 }
 
+                // The calendar opens with today highlighted whether or not a
+                // date is set, and tapping the day already highlighted is not
+                // a change iOS reports — so today would never take. Opening
+                // on an undated task settles it on today up front: the
+                // highlight is then telling the truth, and any other day is a
+                // real change.
+                if !showingDatePicker,
+                    item.scheduledDate == nil {
+
+                    setDate(
+                        Calendar.current.startOfDay(for: Date())
+                    )
+                }
+
                 withAnimation(
                     .easeInOut(duration: 0.2)
                 ) {
@@ -370,25 +384,54 @@ private extension ItemDetailView {
 
                     // Clearing the date leaves the task on Today
                     // indefinitely, so it never turns up as overdue.
-                    Button {
+                    HStack {
 
-                        clearDate()
+                        Button {
 
-                    } label: {
+                            clearDate()
 
-                        Text("Clear date")
-                            .font(.system(size: 15))
-                            .foregroundStyle(Color.deleteRed)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 12)
+                        } label: {
+
+                            Text("Clear date")
+                                .font(.system(size: 15))
+                                .foregroundStyle(Color.deleteRed)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(item.scheduledDate == nil)
+                        .opacity(
+                            item.scheduledDate == nil
+                            ? 0.4
+                            : 1
+                        )
+
+                        Spacer()
+
+                        // Re-tapping the day already chosen is not a change
+                        // iOS reports, so there is always a plain way to
+                        // close rather than only the implicit one.
+                        Button {
+
+                            withAnimation(
+                                .easeInOut(duration: 0.2)
+                            ) {
+                                showingDatePicker = false
+                            }
+
+                        } label: {
+
+                            Text("Done")
+                                .font(
+                                    .system(
+                                        size: 15,
+                                        weight: .semibold
+                                    )
+                                )
+                                .foregroundStyle(Color.accentGreen)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(item.scheduledDate == nil)
-                    .opacity(
-                        item.scheduledDate == nil
-                        ? 0.4
-                        : 1
-                    )
                 }
                 .padding(.vertical, 4)
                 .overlay(
@@ -434,20 +477,7 @@ private extension ItemDetailView {
             },
             set: { newDate in
 
-                item.scheduledDate =
-                    Calendar.current.startOfDay(
-                        for: newDate
-                    )
-
-                // A date on its own still needs an hour to fire at.
-                if item.remindAt == nil {
-
-                    item.remindAt = Self.defaultReminderTime
-                }
-
-                scheduleIfNewReminder()
-
-                saveChanges()
+                setDate(newDate)
 
                 // The choice is made, so the calendar folds away rather than
                 // sitting open over the rest of the screen.
@@ -458,6 +488,26 @@ private extension ItemDetailView {
                 }
             }
         )
+    }
+
+    func setDate(
+        _ newDate: Date
+    ) {
+
+        item.scheduledDate =
+            Calendar.current.startOfDay(
+                for: newDate
+            )
+
+        // A date on its own still needs an hour to fire at.
+        if item.remindAt == nil {
+
+            item.remindAt = Self.defaultReminderTime
+        }
+
+        scheduleIfNewReminder()
+
+        saveChanges()
     }
 
     func clearDate() {
